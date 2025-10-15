@@ -1548,7 +1548,9 @@ const SushiSwapReact = () => {
                   try {
                     // Оновлюємо баланс на сервері
                     const updatedBalances = await updateUserBalance(address, 'USDT', amount, 'add');
+                    console.log('💰 Updated balances from server:', updatedBalances);
                     setVirtualBalances(updatedBalances);
+                    console.log('💰 Virtual balances set to:', updatedBalances);
                     
                     // Зберігаємо транзакцію в історію
                     await fetch(`${config.apiBaseUrl}/save-transaction`, {

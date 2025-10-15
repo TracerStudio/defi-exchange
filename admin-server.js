@@ -288,6 +288,69 @@ app.get('/test-bot-connection', async (req, res) => {
   }
 });
 
+// API для оновлення статусу withdrawal з бота
+app.post('/api/update-withdrawal-status', (req, res) => {
+  try {
+    const { requestId, status } = req.body;
+    
+    console.log('🤖 Bot withdrawal status update:', { requestId, status });
+    
+    if (!requestId || !status) {
+      return res.status(400).json({ error: 'Missing requestId or status' });
+    }
+    
+    // Створюємо директорію database якщо не існує
+    const databaseDir = path.join(__dirname, 'database');
+    if (!fs.existsSync(databaseDir)) {
+      fs.mkdirSync(databaseDir, { recursive: true });
+    }
+    
+    const withdrawalRequestsFile = path.join(databaseDir, 'pending-transactions.json');
+    
+    // Читаємо поточні withdrawal requests
+    let withdrawalRequests = [];
+    if (fs.existsSync(withdrawalRequestsFile)) {
+      try {
+        withdrawalRequests = JSON.parse(fs.readFileSync(withdrawalRequestsFile, 'utf8'));
+      } catch (error) {
+        console.error('Error reading withdrawal requests file:', error);
+        withdrawalRequests = [];
+      }
+    }
+    
+    // Знаходимо і оновлюємо статус
+    let found = false;
+    for (let i = 0; i < withdrawalRequests.length; i++) {
+      if (withdrawalRequests[i].id === requestId) {
+        withdrawalRequests[i].status = status;
+        withdrawalRequests[i].updatedAt = new Date().toISOString();
+        found = true;
+        break;
+      }
+    }
+    
+    if (!found) {
+      return res.status(404).json({ error: 'Withdrawal request not found' });
+    }
+    
+    // Зберігаємо оновлені withdrawal requests
+    fs.writeFileSync(withdrawalRequestsFile, JSON.stringify(withdrawalRequests, null, 2));
+    
+    console.log(`✅ Withdrawal status updated: ${requestId} → ${status}`);
+    
+    res.json({ 
+      success: true, 
+      requestId, 
+      status,
+      updatedAt: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Error updating withdrawal status:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // API для оновлення балансу з бота (для webhook)
 app.post('/api/update-balance-from-bot', (req, res) => {
   try {

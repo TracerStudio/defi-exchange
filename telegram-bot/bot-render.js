@@ -213,6 +213,28 @@ bot.on('callback_query', async (callbackQuery) => {
       withdrawalRequests.set(requestId, request);
       console.log(`📝 Request status updated to: approved`);
       
+      // Зберігаємо статус в базу даних через API
+      try {
+        const statusUpdateResponse = await fetch(`${ADMIN_SERVER_URL}/api/update-withdrawal-status`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            requestId: requestId,
+            status: 'approved'
+          })
+        });
+        
+        if (statusUpdateResponse.ok) {
+          console.log(`✅ Withdrawal status saved to database: ${requestId}`);
+        } else {
+          console.error(`❌ Failed to save withdrawal status to database: ${statusUpdateResponse.status}`);
+        }
+      } catch (error) {
+        console.error('❌ Error saving withdrawal status to database:', error);
+      }
+      
       // Відправляємо підтвердження
       await bot.answerCallbackQuery(callbackQuery.id, {
         text: '✅ WITHDRAWAL APPROVED!',
