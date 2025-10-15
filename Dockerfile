@@ -16,6 +16,11 @@ COPY . .
 # Будуємо React додаток
 RUN npm run build
 
+# Встановлюємо змінні середовища
+ENV NODE_ENV=production
+ENV REACT_APP_ADMIN_SERVER_URL=https://defi-exchange-main.onrender.com
+ENV REACT_APP_API_BASE_URL=https://defi-exchange-main.onrender.com/api
+
 # Встановлюємо порт
 EXPOSE 3002
 

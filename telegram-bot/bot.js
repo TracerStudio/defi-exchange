@@ -6,8 +6,35 @@ const app = express();
 const BOT_TOKEN = '7769270215:AAH_R-Q14oxkKHU0a53xK4_evXWiQJBiO54'; // ID адміна для отримання заявок
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID || '-1002573326301'; // Можна змінити через змінну середовища
 
-// Створюємо бота
-const bot = new TelegramBot(BOT_TOKEN, { polling: true });
+// Створюємо бота з обробкою помилок
+const bot = new TelegramBot(BOT_TOKEN, { 
+  polling: {
+    interval: 1000,
+    autoStart: true,
+    params: {
+      timeout: 10
+    }
+  }
+});
+
+// Обробка помилок polling
+bot.on('polling_error', (error) => {
+  console.error('❌ Polling error:', error.message);
+  
+  if (error.code === 409) {
+    console.log('🔄 Conflict detected - stopping polling and restarting...');
+    bot.stopPolling();
+    setTimeout(() => {
+      console.log('🔄 Restarting bot polling...');
+      bot.startPolling();
+    }, 5000);
+  }
+});
+
+// Обробка помилок webhook
+bot.on('webhook_error', (error) => {
+  console.error('❌ Webhook error:', error.message);
+});
 
 console.log(`🤖 Telegram Bot initialized`);
 console.log(`📱 Admin Chat ID: ${ADMIN_CHAT_ID}`);
@@ -523,19 +550,40 @@ app.get('/health', (req, res) => {
 
 // Запускаємо сервер
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🤖 Telegram bot server running on port ${PORT}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
   console.log(`📱 Bot is ready! Send /start to test.`);
 });
 
-// Обробка помилок
-bot.on('error', (error) => {
-  console.error('Bot error:', error);
+// Graceful shutdown
+process.on('SIGINT', () => {
+  console.log('🛑 Received SIGINT, shutting down gracefully...');
+  bot.stopPolling();
+  server.close(() => {
+    console.log('✅ Server closed');
+    process.exit(0);
+  });
 });
 
-bot.on('polling_error', (error) => {
-  console.error('Polling error:', error);
+process.on('SIGTERM', () => {
+  console.log('🛑 Received SIGTERM, shutting down gracefully...');
+  bot.stopPolling();
+  server.close(() => {
+    console.log('✅ Server closed');
+    process.exit(0);
+  });
+});
+
+// Обробка необроблених помилок
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error);
+  bot.stopPolling();
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
 module.exports = { bot, withdrawalRequests };

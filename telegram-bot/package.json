@@ -5,7 +5,9 @@
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js",
-    "dev": "nodemon bot.js"
+    "dev": "nodemon bot.js",
+    "stop": "node stop-bot.js",
+    "restart": "npm run stop && sleep 3 && npm start"
   },
   "dependencies": {
     "cors": "^2.8.5",

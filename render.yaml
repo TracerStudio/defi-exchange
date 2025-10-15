@@ -10,6 +10,10 @@ services:
         value: production
       - key: PORT
         value: 3002
+      - key: REACT_APP_ADMIN_SERVER_URL
+        value: https://defi-exchange-main.onrender.com
+      - key: REACT_APP_API_BASE_URL
+        value: https://defi-exchange-main.onrender.com/api
     healthCheckPath: /
     autoDeploy: true
 

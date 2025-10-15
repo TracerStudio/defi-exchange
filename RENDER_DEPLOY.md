@@ -36,6 +36,8 @@
 ```
 NODE_ENV=production
 PORT=3002
+REACT_APP_ADMIN_SERVER_URL=https://defi-exchange-main.onrender.com
+REACT_APP_API_BASE_URL=https://defi-exchange-main.onrender.com/api
 ```
 
 **Advanced Settings:**
