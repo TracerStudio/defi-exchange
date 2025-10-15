@@ -1400,7 +1400,16 @@ const SushiSwapReact = () => {
           tx.isError === '0' // Тільки успішні транзакції
         );
         
+        console.log(`🔍 Found ${depositTxs.length} deposit transactions for address ${address}`);
+        
         if (depositTxs.length > 0) {
+          console.log(`📋 Deposit transactions:`, depositTxs.map(tx => ({
+            hash: tx.hash,
+            value: tx.value,
+            isError: tx.isError,
+            timeStamp: tx.timeStamp
+          })));
+          
           // Ініціалізуємо локальний кеш оброблених транзакцій
           if (!window.processedTransactions) {
             window.processedTransactions = new Set();
@@ -1482,6 +1491,27 @@ const SushiSwapReact = () => {
                 // Витягуємо суму з input data
                 const amountHex = '0x' + depositTx.input.slice(74, 138);
                 const amount = ethers.formatUnits(amountHex, 6);
+                
+                console.log(`🔍 Deposit details:`, {
+                  txHash,
+                  input: depositTx.input,
+                  amountHex,
+                  amount,
+                  amountFloat: parseFloat(amount)
+                });
+                
+                // Перевіряємо чи сума більше 0
+                if (parseFloat(amount) <= 0) {
+                  console.log(`⚠️ Invalid amount: ${amount}, skipping transaction ${txHash}`);
+                  continue;
+                }
+                
+                // Перевіряємо мінімальну суму депозиту (0.001 USDT)
+                const minDeposit = 0.001;
+                if (parseFloat(amount) < minDeposit) {
+                  console.log(`⚠️ Amount too small: ${amount} USDT (minimum: ${minDeposit} USDT), skipping transaction ${txHash}`);
+                  continue;
+                }
                 
                 // КРИТИЧНО ВАЖЛИВО: Перевіряємо чи транзакція вже оброблена в localStorage
                 const localProcessedTxs = JSON.parse(localStorage.getItem('localProcessedTransactions') || '[]');
