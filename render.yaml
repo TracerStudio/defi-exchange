@@ -3,7 +3,7 @@ services:
   - type: web
     name: defi-exchange-frontend
     env: static
-    buildCommand: cd src && npm install --legacy-peer-deps && npm run build
+    buildCommand: cd src && npm install --legacy-peer-deps && GENERATE_SOURCEMAP=false npm run build
     staticPublishPath: ./src/build
     envVars:
       - key: REACT_APP_API_URL
