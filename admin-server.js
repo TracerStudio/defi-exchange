@@ -146,7 +146,8 @@ app.use(cors({
       /^https:\/\/.*\.github\.io$/,
       // Додаємо підтримку для мобільних пристроїв
       /^https:\/\/.*\.onrender\.com$/,
-      /^https:\/\/.*\.herokuapp\.com$/
+      /^https:\/\/.*\.herokuapp\.com$/,
+      /^https:\/\/.*\.netlify\.app$/
     ];
     
     // Перевіряємо чи origin дозволений
@@ -194,10 +195,16 @@ app.use((req, res, next) => {
 // Middleware для парсингу JSON
 app.use(express.json());
 
+// Обслуговування статичних файлів React (тільки в production)
+if (NODE_ENV === 'production') {
+  console.log('🌐 Serving React static files from:', path.join(__dirname, 'src', 'build'));
+  app.use(express.static(path.join(__dirname, 'src', 'build')));
+}
+
 // CORS налаштування для production
 app.use(cors({
   origin: NODE_ENV === 'production' 
-    ? ['https://defi-exchange-frontend.onrender.com', 'https://defi-exchange-backend.onrender.com']
+    ? ['https://defi-exchange-app.onrender.com', 'https://defi-exchange-bot.netlify.app']
     : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002']
 }));
 
@@ -1104,6 +1111,14 @@ app.post('/api/update-active-users', (req, res) => {
     });
   }
 });
+
+// Маршрут для React Router (тільки в production)
+if (NODE_ENV === 'production') {
+  app.get('*', (req, res) => {
+    console.log('🌐 Serving React app for route:', req.path);
+    res.sendFile(path.join(__dirname, 'src', 'build', 'index.html'));
+  });
+}
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 DeFi Exchange Server running on port ${PORT}`);

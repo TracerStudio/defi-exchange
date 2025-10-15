@@ -1,22 +1,10 @@
 services:
-  # Frontend React App
+  # Combined Frontend + Backend
   - type: web
-    name: defi-exchange-frontend
-    env: static
-    buildCommand: cd src && npm install --legacy-peer-deps && GENERATE_SOURCEMAP=false npm run build
-    staticPublishPath: ./src/build
-    envVars:
-      - key: REACT_APP_API_URL
-        value: https://defi-exchange-backend.onrender.com
-      - key: REACT_APP_TELEGRAM_BOT_URL
-        value: https://defi-exchange-bot.netlify.app
-
-  # Backend Server
-  - type: web
-    name: defi-exchange-backend
+    name: defi-exchange-app
     env: node
     plan: starter
-    buildCommand: npm install
+    buildCommand: npm install && cd src && npm install --legacy-peer-deps && GENERATE_SOURCEMAP=false npm run build
     startCommand: node admin-server.js
     envVars:
       - key: PORT
@@ -28,7 +16,11 @@ services:
       - key: TELEGRAM_BOT_URL
         value: https://defi-exchange-bot.netlify.app
       - key: FRONTEND_URL
-        value: https://defi-exchange-frontend.onrender.com
+        value: https://defi-exchange-app.onrender.com
+      - key: REACT_APP_API_URL
+        value: https://defi-exchange-app.onrender.com
+      - key: REACT_APP_TELEGRAM_BOT_URL
+        value: https://defi-exchange-bot.netlify.app
 
   # Telegram Bot
   - type: worker
