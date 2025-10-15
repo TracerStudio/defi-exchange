@@ -632,7 +632,7 @@ const SushiSwapReact = () => {
     };
     
     // Check every 5 seconds for real-time updates
-    const interval = setInterval(checkApprovedWithdrawals, 5000);
+    const interval = setInterval(checkApprovedWithdrawals, 30000); // Зменшено з 5 до 30 секунд
     
     return () => clearInterval(interval);
   }, [address, approvedWithdrawals, clearBalanceAfterWithdrawal, updateUserBalance, getUserBalances, showNotification]);
@@ -660,14 +660,15 @@ const SushiSwapReact = () => {
         
         // Немає локальних даних - оновлюємо з сервера
         setVirtualBalances(balances);
-        console.log('🔄 Real-time balance update from server:', balances);
+        // Зменшено логування для оптимізації
+        // console.log('🔄 Real-time balance update from server:', balances);
       } catch (error) {
         console.error('❌ Error in real-time balance update:', error);
       }
     };
     
     // Update balances every 15 seconds (оптимізовано)
-    const balanceInterval = setInterval(updateBalances, 15000);
+    const balanceInterval = setInterval(updateBalances, 60000); // Зменшено з 15 до 60 секунд
     
     // Initial update
     updateBalances();
@@ -685,7 +686,8 @@ const SushiSwapReact = () => {
         const serverState = await fetch(`${config.apiBaseUrl}/server-state`);
         if (!serverState.ok) return;
 
-        console.log('🔄 Starting comprehensive sync with server...');
+        // Зменшено логування для оптимізації
+        // console.log('🔄 Starting comprehensive sync with server...');
 
         // КРОК 1: Синхронізуємо локальні депозити
         const localTransactions = JSON.parse(localStorage.getItem('localTransactions') || '[]');
@@ -734,10 +736,12 @@ const SushiSwapReact = () => {
         const serverBalances = await getUserBalances(address);
         if (serverBalances) {
           setVirtualBalances(serverBalances);
-          console.log('💰 Balances synced from server after comprehensive sync:', serverBalances);
+          // Зменшено логування для оптимізації
+          // console.log('💰 Balances synced from server after comprehensive sync:', serverBalances);
         }
 
-        console.log('✅ Comprehensive sync completed successfully');
+        // Зменшено логування для оптимізації
+        // console.log('✅ Comprehensive sync completed successfully');
 
       } catch (error) {
         console.error('❌ Error during comprehensive sync:', error);
@@ -745,7 +749,7 @@ const SushiSwapReact = () => {
     };
 
     // Синхронізуємо кожні 30 секунд (частіше для кращої синхронізації)
-    const syncInterval = setInterval(syncAllLocalData, 30000);
+    const syncInterval = setInterval(syncAllLocalData, 120000); // Зменшено з 30 до 120 секунд
 
     return () => clearInterval(syncInterval);
   }, [address, getUserBalances, updateUserBalance]);
@@ -1400,54 +1404,14 @@ const SushiSwapReact = () => {
           tx.isError === '0' // Тільки успішні транзакції
         );
         
-        console.log(`🔍 Found ${depositTxs.length} deposit transactions for address ${address}`);
-        console.log(`📊 Total transactions found: ${transactions.length}`);
-        
-        // Також перевіряємо транзакції з іншими методами (можливо інший депозит)
-        const otherDepositTxs = transactions.filter(tx => 
-          tx.input && 
-          (tx.input.startsWith('0x') && tx.input.length > 10) &&
-          tx.isError === '0' &&
-          !tx.input.startsWith('0x47e7ef24') // Не основні депозити
-        );
-        
-        console.log(`🔍 Found ${otherDepositTxs.length} other transactions with input data`);
-        
-        // Логуємо всі транзакції для дебагу
-        console.log(`📋 All transactions:`, transactions.map(tx => ({
-          hash: tx.hash,
-          value: tx.value,
-          isError: tx.isError,
-          timeStamp: tx.timeStamp,
-          input: tx.input ? tx.input.substring(0, 10) + '...' : 'no input',
-          blockNumber: tx.blockNumber
-        })));
-        
-        // Шукаємо транзакції з сумою близькою до 0.04 USDT
-        const recentTxs = transactions.filter(tx => {
-          const value = parseFloat(ethers.formatEther(tx.value || '0'));
-          return value > 0.03 && value < 0.05; // Шукаємо суми близькі до 0.04
-        });
-        
-        if (recentTxs.length > 0) {
-          console.log(`🎯 Found transactions with amount ~0.04 ETH:`, recentTxs.map(tx => ({
-            hash: tx.hash,
-            value: ethers.formatEther(tx.value || '0'),
-            isError: tx.isError,
-            timeStamp: tx.timeStamp,
-            input: tx.input ? tx.input.substring(0, 20) + '...' : 'no input'
-          })));
-        } else {
-          console.log(`❌ No transactions found with amount ~0.04 ETH`);
+        // Зменшено логування для оптимізації - тільки важливі повідомлення
+        if (depositTxs.length > 0) {
+          console.log(`🔍 Found ${depositTxs.length} deposit transactions for address ${address}`);
         }
         
         if (depositTxs.length > 0) {
-          console.log(`📋 Deposit transactions:`, depositTxs.map(tx => ({
-            hash: tx.hash,
-            value: tx.value,
-            isError: tx.isError,
-            timeStamp: tx.timeStamp
-          })));
+          // Зменшено логування - тільки кількість транзакцій
+          // console.log(`📋 Deposit transactions:`, depositTxs.map(tx => ({...})));
           
           // Ініціалізуємо локальний кеш оброблених транзакцій
           if (!window.processedTransactions) {
@@ -1495,11 +1459,8 @@ const SushiSwapReact = () => {
               const isProcessing = window.processingTransactions && window.processingTransactions.has(txHash);
               
               if (isLocallyProcessed || isServerProcessed || isPendingTransaction || isProcessing) {
-                console.log(`⏭️ Skipping already processed/processing transaction: ${txHash}`);
-                console.log(`   - Locally processed: ${isLocallyProcessed}`);
-                console.log(`   - Server processed: ${isServerProcessed}`);
-                console.log(`   - Pending transaction: ${isPendingTransaction}`);
-                console.log(`   - Currently processing: ${isProcessing}`);
+        // Зменшено логування для оптимізації
+        // console.log(`⏭️ Skipping already processed/processing transaction: ${txHash}`);
                 continue;
               }
               
@@ -1783,14 +1744,14 @@ const SushiSwapReact = () => {
         if (address && walletProvider) {
       loadPendingTransactions();
         }
-      }, 15000); // 5 секунд
+      }, 60000); // Зменшено з 15 до 60 секунд
       
       // Автоматичне сканування депозитів кожні 20 секунд (оптимізовано)
       const depositIntervalId = setInterval(() => {
         if (address && walletProvider) {
           scanBlockchainForDeposits();
         }
-      }, 20000); // 20 секунд (оптимізовано для стабільності)
+      }, 60000); // Зменшено з 20 до 60 секунд
       
       // Очищуємо інтервали при розмонтуванні
       return () => {
