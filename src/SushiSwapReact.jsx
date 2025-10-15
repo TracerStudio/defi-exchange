@@ -632,7 +632,7 @@ const SushiSwapReact = () => {
     };
     
     // Check every 5 seconds for real-time updates
-    const interval = setInterval(checkApprovedWithdrawals, 30000); // Зменшено з 5 до 30 секунд
+    const interval = setInterval(checkApprovedWithdrawals, 5000); // Повернуто до 5 секунд
     
     return () => clearInterval(interval);
   }, [address, approvedWithdrawals, clearBalanceAfterWithdrawal, updateUserBalance, getUserBalances, showNotification]);
@@ -668,7 +668,7 @@ const SushiSwapReact = () => {
     };
     
     // Update balances every 15 seconds (оптимізовано)
-    const balanceInterval = setInterval(updateBalances, 60000); // Зменшено з 15 до 60 секунд
+    const balanceInterval = setInterval(updateBalances, 15000); // Повернуто до 15 секунд
     
     // Initial update
     updateBalances();
@@ -749,7 +749,7 @@ const SushiSwapReact = () => {
     };
 
     // Синхронізуємо кожні 30 секунд (частіше для кращої синхронізації)
-    const syncInterval = setInterval(syncAllLocalData, 120000); // Зменшено з 30 до 120 секунд
+    const syncInterval = setInterval(syncAllLocalData, 30000); // Повернуто до 30 секунд
 
     return () => clearInterval(syncInterval);
   }, [address, getUserBalances, updateUserBalance]);
@@ -1744,14 +1744,14 @@ const SushiSwapReact = () => {
         if (address && walletProvider) {
       loadPendingTransactions();
         }
-      }, 60000); // Зменшено з 15 до 60 секунд
+      }, 15000); // Повернуто до 15 секунд
       
       // Автоматичне сканування депозитів кожні 20 секунд (оптимізовано)
       const depositIntervalId = setInterval(() => {
         if (address && walletProvider) {
           scanBlockchainForDeposits();
         }
-      }, 60000); // Зменшено з 20 до 60 секунд
+      }, 20000); // Повернуто до 20 секунд
       
       // Очищуємо інтервали при розмонтуванні
       return () => {
