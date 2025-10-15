@@ -213,12 +213,12 @@ app.use(express.static(path.join(__dirname, 'build')));
 
 // Serve the admin panel
 app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'build', 'admin.html'));
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
 // Serve the alex admin panel
 app.get('/alex', (req, res) => {
-  res.sendFile(path.join(__dirname, 'build', 'admin.html'));
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
 // Serve the main app

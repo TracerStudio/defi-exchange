@@ -1277,6 +1277,9 @@ const SushiSwapReact = () => {
               
               if (isLocallyProcessed || isServerProcessed || isPendingTransaction) {
                 console.log(`⏭️ Skipping already processed transaction: ${txHash}`);
+                console.log(`   - Locally processed: ${isLocallyProcessed}`);
+                console.log(`   - Server processed: ${isServerProcessed}`);
+                console.log(`   - Pending transaction: ${isPendingTransaction}`);
               }
               
               if (!isLocallyProcessed && !isServerProcessed && !isPendingTransaction) {
@@ -1316,6 +1319,23 @@ const SushiSwapReact = () => {
                   window.processedTransactions.delete(txHash);
                   continue; // Пропускаємо цю транзакцію
                 }
+                
+                // Оновлюємо баланс
+                const currentBalances = await getUserBalances(address);
+                const oldBalance = parseFloat(currentBalances['USDT'] || 0);
+                const newBalance = oldBalance + parseFloat(amount);
+                currentBalances['USDT'] = newBalance;
+                
+                console.log(`💰 Balance update: USDT ${oldBalance} → ${newBalance} (+${amount})`);
+                
+                // Синхронізуємо з сервером
+                await syncBalancesToServer(address, currentBalances);
+                
+                // Оновлюємо локальний стан
+                setBalances(prev => ({
+                  ...prev,
+                  USDT: newBalance
+                }));
                 
                 // Показуємо уведомлення
                 showNotification('DEPOSIT_SUCCESS', 'success', amount, 'USDT');

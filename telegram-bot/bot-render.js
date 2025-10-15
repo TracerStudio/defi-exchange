@@ -55,6 +55,40 @@ const getRandomUsername = () => {
   return funUsernames[Math.floor(Math.random() * funUsernames.length)];
 };
 
+// Функція для оновлення балансів користувача
+const updateUserBalances = async (userAddress, token, amount) => {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    
+    // Шлях до файлу балансів користувача
+    const balancesFile = path.join(__dirname, '..', 'database', `user_balances_${userAddress}.json`);
+    
+    // Читаємо поточні баланси
+    let userBalances = {};
+    if (fs.existsSync(balancesFile)) {
+      const data = fs.readFileSync(balancesFile, 'utf8');
+      userBalances = JSON.parse(data);
+    }
+    
+    // Оновлюємо баланс (віднімаємо при withdrawal)
+    const currentBalance = parseFloat(userBalances[token] || 0);
+    const newBalance = Math.max(0, currentBalance - parseFloat(amount));
+    userBalances[token] = newBalance;
+    
+    // Зберігаємо оновлені баланси
+    fs.writeFileSync(balancesFile, JSON.stringify(userBalances, null, 2));
+    
+    console.log(`✅ Updated balance for user ${userAddress}: ${token} ${currentBalance} → ${newBalance} (-${amount})`);
+    
+    return newBalance;
+    
+  } catch (error) {
+    console.error('❌ Error updating user balance:', error);
+    throw error;
+  }
+};
+
 // Webhook endpoint
 app.post(`/webhook/${BOT_TOKEN}`, (req, res) => {
   bot.processUpdate(req.body);
@@ -172,7 +206,17 @@ bot.on('callback_query', async (callbackQuery) => {
         parse_mode: 'Markdown'
       });
       
-      console.log(`Withdrawal approved: ${requestId}`);
+      // Оновлюємо баланси користувача після підтвердження
+      try {
+        await updateUserBalances(request.userAddress, request.token, request.amount);
+        
+        console.log(`✅ Withdrawal approved: ${requestId}`);
+        console.log(`💰 User ${request.userAddress} balance updated: -${request.amount} ${request.token}`);
+        console.log(`📍 User should receive ${request.amount} ${request.token} to ${request.address}`);
+        
+      } catch (balanceError) {
+        console.error('❌ Error updating user balance:', balanceError);
+      }
       
     } else {
       await bot.answerCallbackQuery(callbackQuery.id, {
