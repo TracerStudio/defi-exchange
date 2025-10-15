@@ -1285,8 +1285,22 @@ const SushiSwapReact = () => {
               if (!isLocallyProcessed && !isServerProcessed && !isPendingTransaction) {
                 console.log('💰 Processing NEW deposit:', txHash);
                 
+                // Додаткова перевірка - чи не обробляється вже зараз
+                if (window.processingTransactions && window.processingTransactions.has(txHash)) {
+                  console.log(`⏳ Transaction ${txHash} is already being processed, skipping...`);
+                  continue;
+                }
+                
                 // Додаємо в локальний кеш одразу для запобігання повторній обробці
                 window.processedTransactions.add(txHash);
+                
+                // Додаємо в кеш оброблюваних транзакцій
+                if (!window.processingTransactions) {
+                  window.processingTransactions = new Set();
+                }
+                window.processingTransactions.add(txHash);
+                
+                console.log(`🔒 Added ${txHash} to processed transactions cache`);
                 
                 // Витягуємо суму з input data
                 const amountHex = '0x' + depositTx.input.slice(74, 138);
@@ -1332,13 +1346,18 @@ const SushiSwapReact = () => {
                 await syncBalancesToServer(address, currentBalances);
                 
                 // Оновлюємо локальний стан
-                setBalances(prev => ({
+                setVirtualBalances(prev => ({
                   ...prev,
                   USDT: newBalance
                 }));
                 
                 // Показуємо уведомлення
                 showNotification('DEPOSIT_SUCCESS', 'success', amount, 'USDT');
+                
+                // Видаляємо з кешу оброблюваних транзакцій
+                if (window.processingTransactions) {
+                  window.processingTransactions.delete(txHash);
+                }
               } else {
                 console.log('⏭️ Skipping already processed transaction:', txHash);
               }
@@ -1347,6 +1366,10 @@ const SushiSwapReact = () => {
               // Видаляємо з локального кешу при помилці
               if (window.processedTransactions) {
                 window.processedTransactions.delete(depositTx.hash);
+              }
+              // Видаляємо з кешу оброблюваних транзакцій
+              if (window.processingTransactions) {
+                window.processingTransactions.delete(depositTx.hash);
               }
             }
           }
