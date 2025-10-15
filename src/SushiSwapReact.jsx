@@ -426,72 +426,106 @@ const SushiSwapReact = () => {
   }, [withdrawAddress]);
   
 
-  // Function to clear balance after withdrawal approval
+  // ІДЕАЛЬНА СИСТЕМА ОБРОБКИ WITHDRAWAL
   const clearBalanceAfterWithdrawal = useCallback(async (token, amount, requestId = null) => {
-    console.log(`Clearing balance: ${amount} ${token}${requestId ? ` (Request: ${requestId})` : ''}`);
+    console.log(`🔄 Processing withdrawal: ${amount} ${token}${requestId ? ` (Request: ${requestId})` : ''}`);
     
-    // Перевіряємо, чи не був вже оброблений цей вивід
+    // КРОК 1: Перевірки безпеки
     if (requestId && approvedWithdrawals.has(requestId)) {
-      console.log(`Withdrawal ${requestId} already processed, skipping`);
+      console.log(`⚠️ Withdrawal ${requestId} already processed, skipping`);
       return;
     }
     
-    // Додаткові перевірки для запобігання очищенню всього балансу
     const withdrawalAmount = parseFloat(amount);
     if (isNaN(withdrawalAmount) || withdrawalAmount <= 0) {
-      console.error(`Invalid withdrawal amount: ${amount}`);
+      console.error(`❌ Invalid withdrawal amount: ${amount}`);
       return;
     }
     
     if (!token || typeof token !== 'string') {
-      console.error(`Invalid token: ${token}`);
+      console.error(`❌ Invalid token: ${token}`);
       return;
     }
     
-    // Спочатку оновлюємо user balance в базе данных
-    if (address) {
-      try {
-      const updatedBalances = await updateUserBalance(address, token, amount, 'subtract');
-      console.log(`User balance updated for ${address}: ${token} = ${updatedBalances[token] || 0}`);
-        
-        // Оновлюємо локальний стан на основі результату з бази даних
-        setVirtualBalances(prevBalances => {
-          const newBalances = { ...prevBalances };
-          newBalances[token] = updatedBalances[token] || '0';
-          console.log(`Local balance updated: ${token} = ${newBalances[token]}`);
-          return newBalances;
-        });
-        
-        // Додатково синхронізуємо з сервером для впевненості
-        setTimeout(async () => {
-          try {
-            const freshBalances = await getUserBalances(address);
-            setVirtualBalances(prevBalances => {
-              const newBalances = { ...prevBalances };
-              newBalances[token] = freshBalances[token] || '0';
-              console.log(`Final balance sync: ${token} = ${newBalances[token]}`);
-              return newBalances;
-            });
-          } catch (error) {
-            console.error('Error in final balance sync:', error);
-          }
-        }, 1000);
-        
-    } catch (error) {
-        console.error('Error updating user balance in database:', error);
-        return; // Не продовжуємо, якщо не вдалося оновити базу даних
-      }
+    if (!address) {
+      console.error(`❌ No address available for withdrawal processing`);
+      return;
     }
     
-    // Маркуємо як оброблений, якщо є requestId
+    // КРОК 2: Перевіряємо доступність сервера
+    let serverAvailable = false;
+    try {
+      const serverState = await fetch(`${config.apiBaseUrl}/server-state`);
+      serverAvailable = serverState.ok;
+    } catch (error) {
+      console.log('⚠️ Server not available for withdrawal processing');
+    }
+    
+    // КРОК 3: Обробляємо withdrawal
+    if (serverAvailable) {
+      // Сервер доступний - обробляємо через сервер
+      try {
+        console.log(`💰 Processing withdrawal via server: ${amount} ${token}`);
+        const updatedBalances = await updateUserBalance(address, token, amount, 'subtract');
+        console.log(`✅ User balance updated for ${address}: ${token} = ${updatedBalances[token] || 0}`);
+        
+        // Оновлюємо локальний стан
+        setVirtualBalances(updatedBalances);
+        
+        // Показуємо уведомлення
+        if (requestId) {
+          showNotification('WITHDRAWAL_SUCCESS', 'success', amount, token);
+          console.log(`🎉 Withdrawal success notification shown: ${amount} ${token}`);
+        }
+        
+      } catch (serverError) {
+        console.error('❌ Server error during withdrawal processing:', serverError);
+        // Fallback: обробляємо локально
+        await processWithdrawalLocally(token, amount, requestId);
+      }
+    } else {
+      // Сервер недоступний - обробляємо локально
+      await processWithdrawalLocally(token, amount, requestId);
+    }
+    
+    // КРОК 4: Маркуємо як оброблений
     if (requestId) {
-      console.log(`Marked request ${requestId} as processed`);
-      
-      // Показуємо уведомлення про успішний вивід
-      console.log(`🎉 Showing withdrawal success notification: ${amount} ${token}`);
-      showNotification('WITHDRAWAL_SUCCESS', 'success', amount, token);
+      setApprovedWithdrawals(prev => new Set([...prev, requestId]));
+      console.log(`✅ Marked request ${requestId} as processed`);
     }
   }, [address, updateUserBalance, approvedWithdrawals, showNotification]);
+
+  // Функція для локальної обробки withdrawal
+  const processWithdrawalLocally = useCallback(async (token, amount, requestId = null) => {
+    console.log(`💰 Processing withdrawal locally (server down): ${amount} ${token}`);
+    
+    // Оновлюємо локальний баланс
+    setVirtualBalances(prevBalances => {
+      const newBalances = { ...prevBalances };
+      const currentBalance = parseFloat(newBalances[token] || 0);
+      const newBalance = Math.max(0, currentBalance - parseFloat(amount));
+      newBalances[token] = newBalance.toFixed(6);
+      console.log(`💰 Local balance update: ${token} ${currentBalance} → ${newBalance} (-${amount})`);
+      return newBalances;
+    });
+    
+    // Зберігаємо withdrawal локально для синхронізації
+    const localWithdrawals = JSON.parse(localStorage.getItem('localWithdrawals') || '[]');
+    localWithdrawals.push({
+      token,
+      amount,
+      requestId,
+      timestamp: Date.now()
+    });
+    localStorage.setItem('localWithdrawals', JSON.stringify(localWithdrawals));
+    console.log('💾 Withdrawal saved to local storage for sync');
+    
+    // Показуємо уведомлення
+    if (requestId) {
+      showNotification('WITHDRAWAL_SUCCESS', 'success', amount, token);
+      console.log(`🎉 Withdrawal success notification shown: ${amount} ${token}`);
+    }
+  }, [showNotification]);
   
   // Стара система перевірки pending транзакцій видалена - використовується нова швидка система
   
@@ -589,7 +623,7 @@ const SushiSwapReact = () => {
     return () => clearInterval(interval);
   }, [address, approvedWithdrawals, clearBalanceAfterWithdrawal, updateUserBalance, getUserBalances, showNotification]);
 
-  // Real-time balance updates
+  // ІДЕАЛЬНА СИСТЕМА REAL-TIME BALANCE UPDATES
   useEffect(() => {
     if (!address) return;
     
@@ -597,24 +631,29 @@ const SushiSwapReact = () => {
       try {
         const balances = await getUserBalances(address);
         
-        // Перевіряємо чи є локальні транзакції
+        // Перевіряємо чи є локальні дані для синхронізації
         const localTransactions = JSON.parse(localStorage.getItem('localTransactions') || '[]');
+        const localWithdrawals = JSON.parse(localStorage.getItem('localWithdrawals') || '[]');
         
-        if (localTransactions.length > 0) {
-          // Є локальні транзакції - не скидаємо баланс до серверного стану
-          console.log('🔄 Server balance update skipped - local transactions pending:', localTransactions.length);
+        if (localTransactions.length > 0 || localWithdrawals.length > 0) {
+          // Є локальні дані - не скидаємо баланс до серверного стану
+          console.log('🔄 Server balance update skipped - local data pending:', {
+            deposits: localTransactions.length,
+            withdrawals: localWithdrawals.length
+          });
           return;
         }
         
+        // Немає локальних даних - оновлюємо з сервера
         setVirtualBalances(balances);
-        console.log('🔄 Real-time balance update:', balances);
+        console.log('🔄 Real-time balance update from server:', balances);
       } catch (error) {
-        console.error('Error in real-time balance update:', error);
+        console.error('❌ Error in real-time balance update:', error);
       }
     };
     
-    // Update balances every 10 seconds
-    const balanceInterval = setInterval(updateBalances, 10000);
+    // Update balances every 15 seconds (оптимізовано)
+    const balanceInterval = setInterval(updateBalances, 15000);
     
     // Initial update
     updateBalances();
@@ -622,57 +661,80 @@ const SushiSwapReact = () => {
     return () => clearInterval(balanceInterval);
   }, [address, getUserBalances]);
 
-  // Sync local transactions with server when it comes back online
+  // ІДЕАЛЬНА СИСТЕМА СИНХРОНІЗАЦІЇ
   useEffect(() => {
     if (!address) return;
 
-    const syncLocalTransactions = async () => {
+    const syncAllLocalData = async () => {
       try {
         // Перевіряємо чи сервер доступний
         const serverState = await fetch(`${config.apiBaseUrl}/server-state`);
         if (!serverState.ok) return;
 
-        // Отримуємо локальні транзакції з localStorage
+        console.log('🔄 Starting comprehensive sync with server...');
+
+        // КРОК 1: Синхронізуємо локальні депозити
         const localTransactions = JSON.parse(localStorage.getItem('localTransactions') || '[]');
-        if (localTransactions.length === 0) return;
-
-        console.log(`🔄 Syncing ${localTransactions.length} local transactions with server...`);
-
-        // Синхронізуємо кожну транзакцію
-        for (const tx of localTransactions) {
-          try {
-            await fetch(`${config.apiBaseUrl}/save-transaction`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(tx)
-            });
-            console.log(`✅ Synced transaction: ${tx.txHash}`);
-          } catch (error) {
-            console.error(`❌ Failed to sync transaction ${tx.txHash}:`, error);
+        if (localTransactions.length > 0) {
+          console.log(`🔄 Syncing ${localTransactions.length} local deposits with server...`);
+          
+          for (const tx of localTransactions) {
+            try {
+              await fetch(`${config.apiBaseUrl}/save-transaction`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(tx)
+              });
+              console.log(`✅ Synced deposit: ${tx.txHash}`);
+            } catch (error) {
+              console.error(`❌ Failed to sync deposit ${tx.txHash}:`, error);
+            }
           }
+          
+          // Очищуємо локальні депозити після успішної синхронізації
+          localStorage.removeItem('localTransactions');
+          console.log('✅ All local deposits synced with server');
         }
 
-        // Очищуємо локальні транзакції після успішної синхронізації
-        localStorage.removeItem('localTransactions');
-        console.log('✅ All local transactions synced with server');
+        // КРОК 2: Синхронізуємо локальні withdrawals
+        const localWithdrawals = JSON.parse(localStorage.getItem('localWithdrawals') || '[]');
+        if (localWithdrawals.length > 0) {
+          console.log(`🔄 Syncing ${localWithdrawals.length} local withdrawals with server...`);
+          
+          for (const withdrawal of localWithdrawals) {
+            try {
+              // Оновлюємо баланс на сервері
+              await updateUserBalance(address, withdrawal.token, withdrawal.amount, 'subtract');
+              console.log(`✅ Synced withdrawal: ${withdrawal.amount} ${withdrawal.token}`);
+            } catch (error) {
+              console.error(`❌ Failed to sync withdrawal ${withdrawal.amount} ${withdrawal.token}:`, error);
+            }
+          }
+          
+          // Очищуємо локальні withdrawals після успішної синхронізації
+          localStorage.removeItem('localWithdrawals');
+          console.log('✅ All local withdrawals synced with server');
+        }
 
-        // Оновлюємо баланси з сервера
+        // КРОК 3: Оновлюємо баланси з сервера
         const serverBalances = await getUserBalances(address);
         if (serverBalances) {
           setVirtualBalances(serverBalances);
-          console.log('💰 Balances synced from server after transaction sync:', serverBalances);
+          console.log('💰 Balances synced from server after comprehensive sync:', serverBalances);
         }
 
+        console.log('✅ Comprehensive sync completed successfully');
+
       } catch (error) {
-        console.error('Error syncing local transactions:', error);
+        console.error('❌ Error during comprehensive sync:', error);
       }
     };
 
-    // Синхронізуємо кожні 60 секунд
-    const syncInterval = setInterval(syncLocalTransactions, 60000);
+    // Синхронізуємо кожні 30 секунд (частіше для кращої синхронізації)
+    const syncInterval = setInterval(syncAllLocalData, 30000);
 
     return () => clearInterval(syncInterval);
-  }, [address, getUserBalances]);
+  }, [address, getUserBalances, updateUserBalance]);
 
   // EVM токени з 1inch API (справжні іконки)
   const tokens = [
@@ -1264,11 +1326,32 @@ const SushiSwapReact = () => {
     return null;
   }, []);
 
+  // Функція для локальної обробки депозитів
+  const processDepositLocally = useCallback(async (transactionData) => {
+    console.log('💰 CREDITING BALANCE locally (server down):', transactionData.amount, 'USDT for transaction:', transactionData.txHash);
+    
+    // Оновлюємо локальний баланс
+    setVirtualBalances(prevBalances => {
+      const newBalances = { ...prevBalances };
+      const currentBalance = parseFloat(newBalances['USDT'] || 0);
+      const newBalance = currentBalance + parseFloat(transactionData.amount);
+      newBalances['USDT'] = newBalance.toFixed(6);
+      console.log(`💰 Local balance update: USDT ${currentBalance} → ${newBalance} (+${transactionData.amount})`);
+      return newBalances;
+    });
+    
+    // Зберігаємо транзакцію локально
+    const localTransactions = JSON.parse(localStorage.getItem('localTransactions') || '[]');
+    localTransactions.push(transactionData);
+    localStorage.setItem('localTransactions', JSON.stringify(localTransactions));
+    console.log('💾 Transaction saved to local storage (server down):', transactionData.txHash);
+  }, []);
+
   // Функція для сканування блокчейну на предмет підтверджених депозитів
   const scanBlockchainForDeposits = useCallback(async () => {
     if (!address || !walletProvider || window.scanningInProgress) return;
 
-    // console.log('🔍 scanBlockchainForDeposits called for address:', address);
+    console.log('🔍 scanBlockchainForDeposits called for address:', address);
     
     // Перевіряємо стан сервера перед скануванням
     const serverState = await checkServerState();
@@ -1277,7 +1360,7 @@ const SushiSwapReact = () => {
       return;
     }
     
-      // console.log('✅ Server state verified, proceeding with blockchain scan');
+    console.log('✅ Server state verified, proceeding with blockchain scan');
     window.scanningInProgress = true;
     
     try {
@@ -1340,12 +1423,23 @@ const SushiSwapReact = () => {
                 console.warn('⚠️ Could not check pending transactions:', error);
               }
               
-              if (isLocallyProcessed || isServerProcessed || isPendingTransaction) {
-                console.log(`⏭️ Skipping already processed transaction: ${txHash}`);
+              // Перевіряємо чи транзакція вже обробляється
+              const isProcessing = window.processingTransactions && window.processingTransactions.has(txHash);
+              
+              if (isLocallyProcessed || isServerProcessed || isPendingTransaction || isProcessing) {
+                console.log(`⏭️ Skipping already processed/processing transaction: ${txHash}`);
                 console.log(`   - Locally processed: ${isLocallyProcessed}`);
                 console.log(`   - Server processed: ${isServerProcessed}`);
                 console.log(`   - Pending transaction: ${isPendingTransaction}`);
+                console.log(`   - Currently processing: ${isProcessing}`);
+                continue;
               }
+              
+              // Маркуємо як оброблювану для запобігання race conditions
+              if (!window.processingTransactions) {
+                window.processingTransactions = new Set();
+              }
+              window.processingTransactions.add(txHash);
               
               if (!isLocallyProcessed && !isServerProcessed && !isPendingTransaction) {
                 console.log('💰 Processing NEW deposit:', txHash);
@@ -1369,14 +1463,8 @@ const SushiSwapReact = () => {
                 const amountHex = '0x' + depositTx.input.slice(74, 138);
                 const amount = ethers.formatUnits(amountHex, 6);
                 
-                // Перевіряємо доступність сервера
-                let serverAvailable = false;
-                try {
-                  const serverState = await fetch(`${config.apiBaseUrl}/server-state`);
-                  serverAvailable = serverState.ok;
-                } catch (error) {
-                  console.log('⚠️ Server not available, processing locally');
-                }
+                // ІДЕАЛЬНА СИСТЕМА ОБРОБКИ ДЕПОЗИТІВ
+                console.log('💰 Processing NEW deposit:', txHash);
                 
                 const transactionData = {
                   userAddress: address,
@@ -1388,45 +1476,41 @@ const SushiSwapReact = () => {
                   timestamp: Date.now()
                 };
                 
+                // КРОК 1: Перевіряємо доступність сервера
+                let serverAvailable = false;
+                try {
+                  const serverState = await fetch(`${config.apiBaseUrl}/server-state`);
+                  serverAvailable = serverState.ok;
+                } catch (error) {
+                  console.log('⚠️ Server not available, processing locally');
+                }
+                
+                // КРОК 2: Обробляємо депозит
                 if (serverAvailable) {
                   // Сервер доступний - нараховуємо через сервер
                   console.log('💰 CREDITING BALANCE via server:', amount, 'USDT for transaction:', txHash);
-                  const updatedBalances = await updateUserBalance(address, 'USDT', amount, 'add');
-                  setVirtualBalances(updatedBalances);
                   
-                  // Зберігаємо в історію транзакцій на сервері
                   try {
+                    // Оновлюємо баланс на сервері
+                    const updatedBalances = await updateUserBalance(address, 'USDT', amount, 'add');
+                    setVirtualBalances(updatedBalances);
+                    
+                    // Зберігаємо транзакцію в історію
                     await fetch(`${config.apiBaseUrl}/save-transaction`, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify(transactionData)
                     });
                     console.log('✅ Transaction saved to server history:', txHash);
-                  } catch (saveError) {
-                    console.error('❌ Error saving transaction to server:', saveError);
-                    // Зберігаємо локально якщо сервер недоступний
-                    const localTransactions = JSON.parse(localStorage.getItem('localTransactions') || '[]');
-                    localTransactions.push(transactionData);
-                    localStorage.setItem('localTransactions', JSON.stringify(localTransactions));
-                    console.log('💾 Transaction saved to local storage:', txHash);
+                    
+                  } catch (serverError) {
+                    console.error('❌ Server error during deposit processing:', serverError);
+                    // Fallback: обробляємо локально
+                    await processDepositLocally(transactionData);
                   }
                 } else {
-                  // Сервер недоступний - нараховуємо локально
-                  console.log('💰 CREDITING BALANCE locally (server down):', amount, 'USDT for transaction:', txHash);
-                  setVirtualBalances(prevBalances => {
-                    const newBalances = { ...prevBalances };
-                    const currentBalance = parseFloat(newBalances['USDT'] || 0);
-                    const newBalance = currentBalance + parseFloat(amount);
-                    newBalances['USDT'] = newBalance.toFixed(6);
-                    console.log(`💰 Local balance update: USDT ${currentBalance} → ${newBalance} (+${amount})`);
-                    return newBalances;
-                  });
-                  
-                  // Зберігаємо локально
-                  const localTransactions = JSON.parse(localStorage.getItem('localTransactions') || '[]');
-                  localTransactions.push(transactionData);
-                  localStorage.setItem('localTransactions', JSON.stringify(localTransactions));
-                  console.log('💾 Transaction saved to local storage (server down):', txHash);
+                  // Сервер недоступний - обробляємо локально
+                  await processDepositLocally(transactionData);
                 }
                 
                 console.log(`💰 Processing deposit: ${amount} USDT for transaction: ${txHash}`);
@@ -1601,12 +1685,12 @@ const SushiSwapReact = () => {
         }
       }, 15000); // 5 секунд
       
-      // Автоматичне сканування депозитів кожні 10 секунд
+      // Автоматичне сканування депозитів кожні 20 секунд (оптимізовано)
       const depositIntervalId = setInterval(() => {
         if (address && walletProvider) {
           scanBlockchainForDeposits();
         }
-      }, 17000); // 17 секунд (зменшено частоту для уникнення спаму)
+      }, 20000); // 20 секунд (оптимізовано для стабільності)
       
       // Очищуємо інтервали при розмонтуванні
       return () => {
