@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAppKit, useAppKitAccount, useAppKitProvider } from '@reown/appkit/react';
 import { Contract, BrowserProvider, ethers } from 'ethers';
 import './AdminPanel.css';
+import '../SushiSwapReact.css';
+import '../appkit-config';
 
 const AdminPanel = () => {
   console.log('AdminPanel: Component rendered');

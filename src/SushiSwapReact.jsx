@@ -1358,6 +1358,12 @@ const SushiSwapReact = () => {
     const localTransactions = JSON.parse(localStorage.getItem('localTransactions') || '[]');
     localTransactions.push(transactionData);
     localStorage.setItem('localTransactions', JSON.stringify(localTransactions));
+    
+    // Додаємо в локальний список оброблених транзакцій
+    const localProcessedTxs = JSON.parse(localStorage.getItem('localProcessedTransactions') || '[]');
+    localProcessedTxs.push(transactionData.txHash);
+    localStorage.setItem('localProcessedTransactions', JSON.stringify(localProcessedTxs));
+    
     console.log('💾 Transaction saved to local storage (server down):', transactionData.txHash);
   }, []);
 
@@ -1477,6 +1483,13 @@ const SushiSwapReact = () => {
                 const amountHex = '0x' + depositTx.input.slice(74, 138);
                 const amount = ethers.formatUnits(amountHex, 6);
                 
+                // КРИТИЧНО ВАЖЛИВО: Перевіряємо чи транзакція вже оброблена в localStorage
+                const localProcessedTxs = JSON.parse(localStorage.getItem('localProcessedTransactions') || '[]');
+                if (localProcessedTxs.includes(txHash)) {
+                  console.log(`⏭️ Transaction ${txHash} already processed locally, skipping`);
+                  continue;
+                }
+                
                 // ІДЕАЛЬНА СИСТЕМА ОБРОБКИ ДЕПОЗИТІВ
                 console.log('💰 Processing NEW deposit:', txHash);
                 
@@ -1516,6 +1529,10 @@ const SushiSwapReact = () => {
                       body: JSON.stringify(transactionData)
                     });
                     console.log('✅ Transaction saved to server history:', txHash);
+                    
+                    // Додаємо в локальний список оброблених транзакцій
+                    localProcessedTxs.push(txHash);
+                    localStorage.setItem('localProcessedTransactions', JSON.stringify(localProcessedTxs));
                     
                   } catch (serverError) {
                     console.error('❌ Server error during deposit processing:', serverError);
