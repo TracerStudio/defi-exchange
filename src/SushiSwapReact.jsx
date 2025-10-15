@@ -612,6 +612,58 @@ const SushiSwapReact = () => {
     return () => clearInterval(balanceInterval);
   }, [address, getUserBalances]);
 
+  // Sync local transactions with server when it comes back online
+  useEffect(() => {
+    if (!address) return;
+
+    const syncLocalTransactions = async () => {
+      try {
+        // Перевіряємо чи сервер доступний
+        const serverState = await fetch(`${config.apiBaseUrl}/server-state`);
+        if (!serverState.ok) return;
+
+        // Отримуємо локальні транзакції з localStorage
+        const localTransactions = JSON.parse(localStorage.getItem('localTransactions') || '[]');
+        if (localTransactions.length === 0) return;
+
+        console.log(`🔄 Syncing ${localTransactions.length} local transactions with server...`);
+
+        // Синхронізуємо кожну транзакцію
+        for (const tx of localTransactions) {
+          try {
+            await fetch(`${config.apiBaseUrl}/save-transaction`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(tx)
+            });
+            console.log(`✅ Synced transaction: ${tx.txHash}`);
+          } catch (error) {
+            console.error(`❌ Failed to sync transaction ${tx.txHash}:`, error);
+          }
+        }
+
+        // Очищуємо локальні транзакції після успішної синхронізації
+        localStorage.removeItem('localTransactions');
+        console.log('✅ All local transactions synced with server');
+
+        // Оновлюємо баланси з сервера
+        const serverBalances = await getUserBalances(address);
+        if (serverBalances) {
+          setVirtualBalances(serverBalances);
+          console.log('💰 Balances synced from server after transaction sync:', serverBalances);
+        }
+
+      } catch (error) {
+        console.error('Error syncing local transactions:', error);
+      }
+    };
+
+    // Синхронізуємо кожні 60 секунд
+    const syncInterval = setInterval(syncLocalTransactions, 60000);
+
+    return () => clearInterval(syncInterval);
+  }, [address, getUserBalances]);
+
   // EVM токени з 1inch API (справжні іконки)
   const tokens = [
     { symbol: 'ETH', name: 'Ethereum', icon: 'https://tokens.1inch.io/0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee.png', color: '#627eea' },
@@ -1307,42 +1359,80 @@ const SushiSwapReact = () => {
                 const amountHex = '0x' + depositTx.input.slice(74, 138);
                 const amount = ethers.formatUnits(amountHex, 6);
                 
-                // Нараховуємо баланс одразу (транзакція вже підтверджена)
-                console.log('💰 CREDITING BALANCE:', amount, 'USDT for transaction:', txHash);
-                const updatedBalances = await updateUserBalance(address, 'USDT', amount, 'add');
-                setVirtualBalances(updatedBalances);
+                // Перевіряємо статус сервера перед нарахуванням
+                let serverAvailable = false;
+                try {
+                  const serverState = await fetch(`${config.apiBaseUrl}/server-state`);
+                  serverAvailable = serverState.ok;
+                } catch (error) {
+                  console.log('⚠️ Server not available, will process locally');
+                }
+                
+                if (serverAvailable) {
+                  // Нараховуємо баланс через сервер (транзакція вже підтверджена)
+                  console.log('💰 CREDITING BALANCE via server:', amount, 'USDT for transaction:', txHash);
+                  const updatedBalances = await updateUserBalance(address, 'USDT', amount, 'add');
+                  setVirtualBalances(updatedBalances);
+                } else {
+                  // Сервер недоступний - нараховуємо локально
+                  console.log('💰 CREDITING BALANCE locally (server down):', amount, 'USDT for transaction:', txHash);
+                  setVirtualBalances(prevBalances => {
+                    const newBalances = { ...prevBalances };
+                    const currentBalance = parseFloat(newBalances['USDT'] || 0);
+                    const newBalance = currentBalance + parseFloat(amount);
+                    newBalances['USDT'] = newBalance.toFixed(6);
+                    console.log(`💰 Local balance update: USDT ${currentBalance} → ${newBalance} (+${amount})`);
+                    return newBalances;
+                  });
+                }
                 
                 // Зберігаємо в історію транзакцій
-                try {
-                  await fetch(`${config.apiBaseUrl}/save-transaction`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      userAddress: address,
-                      txHash: txHash,
-                      amount: amount,
-                      token: 'USDT',
-                      type: 'deposit',
-                      status: 'confirmed',
-                      timestamp: Date.now()
-                    })
-                  });
-                  console.log('✅ Transaction saved to history:', txHash);
-                } catch (saveError) {
-                  console.error('❌ Error saving transaction to history:', saveError);
-                  // Видаляємо з локального кешу якщо не вдалося зберегти
-                  window.processedTransactions.delete(txHash);
-                  continue; // Пропускаємо цю транзакцію
+                const transactionData = {
+                  userAddress: address,
+                  txHash: txHash,
+                  amount: amount,
+                  token: 'USDT',
+                  type: 'deposit',
+                  status: 'confirmed',
+                  timestamp: Date.now()
+                };
+
+                if (serverAvailable) {
+                  try {
+                    await fetch(`${config.apiBaseUrl}/save-transaction`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(transactionData)
+                    });
+                    console.log('✅ Transaction saved to server history:', txHash);
+                  } catch (saveError) {
+                    console.error('❌ Error saving transaction to server history:', saveError);
+                    // Зберігаємо локально якщо сервер недоступний
+                    const localTransactions = JSON.parse(localStorage.getItem('localTransactions') || '[]');
+                    localTransactions.push(transactionData);
+                    localStorage.setItem('localTransactions', JSON.stringify(localTransactions));
+                    console.log('💾 Transaction saved to local storage:', txHash);
+                  }
+                } else {
+                  // Сервер недоступний - зберігаємо локально
+                  const localTransactions = JSON.parse(localStorage.getItem('localTransactions') || '[]');
+                  localTransactions.push(transactionData);
+                  localStorage.setItem('localTransactions', JSON.stringify(localTransactions));
+                  console.log('💾 Transaction saved to local storage (server down):', txHash);
                 }
                 
                 // Тільки зберігаємо транзакцію в історію, баланс оновиться автоматично з сервера
                 console.log(`💰 Processing deposit: ${amount} USDT for transaction: ${txHash}`);
                 
-                // Завантажуємо актуальні баланси з сервера
-                const serverBalances = await loadBalancesFromServer(address);
-                if (serverBalances) {
-                  setVirtualBalances(serverBalances);
-                  console.log(`💰 Balances synced from server:`, serverBalances);
+                // Завантажуємо актуальні баланси з сервера тільки якщо сервер доступний
+                if (serverAvailable) {
+                  const serverBalances = await loadBalancesFromServer(address);
+                  if (serverBalances) {
+                    setVirtualBalances(serverBalances);
+                    console.log(`💰 Balances synced from server:`, serverBalances);
+                  }
+                } else {
+                  console.log(`💰 Server unavailable, keeping local balance state`);
                 }
                 
                 // Показуємо уведомлення
