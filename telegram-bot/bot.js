@@ -5,6 +5,7 @@ const app = express();
 // Telegram Bot Token (заміни на свій токен)
 const BOT_TOKEN = '7769270215:AAH_R-Q14oxkKHU0a53xK4_evXWiQJBiO54'; // ID адміна для отримання заявок
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID || '-1002573326301'; // Можна змінити через змінну середовища
+const ADMIN_SERVER_URL = process.env.ADMIN_SERVER_URL || 'https://defi-exchange-main.onrender.com'; // URL адмін сервера
 
 // Створюємо бота з обробкою помилок
 const bot = new TelegramBot(BOT_TOKEN, { 
@@ -39,6 +40,7 @@ bot.on('webhook_error', (error) => {
 console.log(`🤖 Telegram Bot initialized`);
 console.log(`📱 Admin Chat ID: ${ADMIN_CHAT_ID}`);
 console.log(`🔑 Bot Token: ${BOT_TOKEN.substring(0, 10)}...`);
+console.log(`🌐 Admin Server URL: ${ADMIN_SERVER_URL}`);
 
 // Зберігаємо заявки
 let withdrawalRequests = new Map();
@@ -553,6 +555,7 @@ const PORT = process.env.PORT || 3001;
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🤖 Telegram bot server running on port ${PORT}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+  console.log(`🌐 Admin Server: ${ADMIN_SERVER_URL}`);
   console.log(`📱 Bot is ready! Send /start to test.`);
 });
 

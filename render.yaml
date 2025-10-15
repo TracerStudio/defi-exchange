@@ -31,5 +31,7 @@ services:
         sync: false  # Встановіть вручну в Dashboard
       - key: ADMIN_SERVER_URL
         value: https://defi-exchange-main.onrender.com
+      - key: ADMIN_CHAT_ID
+        value: "-1002573326301"
     healthCheckPath: /
     autoDeploy: true
