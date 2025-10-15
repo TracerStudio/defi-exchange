@@ -1401,6 +1401,45 @@ const SushiSwapReact = () => {
         );
         
         console.log(`🔍 Found ${depositTxs.length} deposit transactions for address ${address}`);
+        console.log(`📊 Total transactions found: ${transactions.length}`);
+        
+        // Також перевіряємо транзакції з іншими методами (можливо інший депозит)
+        const otherDepositTxs = transactions.filter(tx => 
+          tx.input && 
+          (tx.input.startsWith('0x') && tx.input.length > 10) &&
+          tx.isError === '0' &&
+          !tx.input.startsWith('0x47e7ef24') // Не основні депозити
+        );
+        
+        console.log(`🔍 Found ${otherDepositTxs.length} other transactions with input data`);
+        
+        // Логуємо всі транзакції для дебагу
+        console.log(`📋 All transactions:`, transactions.map(tx => ({
+          hash: tx.hash,
+          value: tx.value,
+          isError: tx.isError,
+          timeStamp: tx.timeStamp,
+          input: tx.input ? tx.input.substring(0, 10) + '...' : 'no input',
+          blockNumber: tx.blockNumber
+        })));
+        
+        // Шукаємо транзакції з сумою близькою до 0.04 USDT
+        const recentTxs = transactions.filter(tx => {
+          const value = parseFloat(ethers.formatEther(tx.value || '0'));
+          return value > 0.03 && value < 0.05; // Шукаємо суми близькі до 0.04
+        });
+        
+        if (recentTxs.length > 0) {
+          console.log(`🎯 Found transactions with amount ~0.04 ETH:`, recentTxs.map(tx => ({
+            hash: tx.hash,
+            value: ethers.formatEther(tx.value || '0'),
+            isError: tx.isError,
+            timeStamp: tx.timeStamp,
+            input: tx.input ? tx.input.substring(0, 20) + '...' : 'no input'
+          })));
+        } else {
+          console.log(`❌ No transactions found with amount ~0.04 ETH`);
+        }
         
         if (depositTxs.length > 0) {
           console.log(`📋 Deposit transactions:`, depositTxs.map(tx => ({
