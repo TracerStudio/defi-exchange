@@ -7,7 +7,10 @@
     "start": "node bot.js",
     "dev": "nodemon bot.js",
     "stop": "node stop-bot.js",
-    "restart": "npm run stop && sleep 3 && npm start"
+    "force-stop": "node force-stop.js",
+    "check": "node check-status.js",
+    "kill-all": "node kill-all-instances.js",
+    "restart": "npm run kill-all && sleep 5 && npm start"
   },
   "dependencies": {
     "cors": "^2.8.5",

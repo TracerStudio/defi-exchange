@@ -25,10 +25,18 @@ bot.on('polling_error', (error) => {
   if (error.code === 409) {
     console.log('🔄 Conflict detected - stopping polling and restarting...');
     bot.stopPolling();
+    
+    // Додатково очищаємо webhook
+    bot.deleteWebHook().then(() => {
+      console.log('✅ Webhook cleared');
+    }).catch(err => {
+      console.log('⚠️ Webhook clear failed:', err.message);
+    });
+    
     setTimeout(() => {
       console.log('🔄 Restarting bot polling...');
       bot.startPolling();
-    }, 5000);
+    }, 10000); // Збільшуємо затримку до 10 секунд
   }
 });
 

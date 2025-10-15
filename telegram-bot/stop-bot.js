@@ -18,6 +18,14 @@ async function stopBot() {
     const botInfo = await tempBot.getMe();
     console.log(`✅ Bot info: @${botInfo.username} (${botInfo.first_name})`);
     
+    // Додатково перевіряємо та очищаємо webhook
+    try {
+      const webhookInfo = await tempBot.getWebHookInfo();
+      console.log('📡 Webhook info:', webhookInfo);
+    } catch (webhookError) {
+      console.log('📡 No webhook info available');
+    }
+    
     console.log('✅ Bot stopped successfully');
     
   } catch (error) {
