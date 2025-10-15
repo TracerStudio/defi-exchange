@@ -60,22 +60,31 @@ const getRandomUsername = () => {
 const updateUserBalances = async (userAddress, token, amount) => {
   try {
     console.log(`🤖 Updating balance via API: ${userAddress}, ${token}, -${amount}`);
+    console.log(`🌐 API URL: ${ADMIN_SERVER_URL}/api/update-balance-from-bot`);
+    
+    const requestBody = {
+      userAddress: userAddress,
+      token: token,
+      amount: amount,
+      operation: 'subtract'
+    };
+    
+    console.log(`📤 Request body:`, requestBody);
     
     const response = await fetch(`${ADMIN_SERVER_URL}/api/update-balance-from-bot`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        userAddress: userAddress,
-        token: token,
-        amount: amount,
-        operation: 'subtract'
-      })
+      body: JSON.stringify(requestBody)
     });
     
+    console.log(`📡 API Response status: ${response.status} ${response.statusText}`);
+    
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error(`❌ API Error Response:`, errorText);
+      throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorText}`);
     }
     
     const result = await response.json();
@@ -85,12 +94,20 @@ const updateUserBalances = async (userAddress, token, amount) => {
     
   } catch (error) {
     console.error('❌ Error updating user balance via API:', error);
+    console.error('❌ Error stack:', error.stack);
     throw error;
   }
 };
 
 // Webhook endpoint
 app.post(`/webhook/${BOT_TOKEN}`, (req, res) => {
+  console.log(`📨 Webhook received:`, {
+    updateId: req.body.update_id,
+    messageType: req.body.message ? 'message' : req.body.callback_query ? 'callback_query' : 'other',
+    from: req.body.message?.from?.username || req.body.callback_query?.from?.username || 'unknown',
+    data: req.body.callback_query?.data || 'no data'
+  });
+  
   bot.processUpdate(req.body);
   res.sendStatus(200);
 });
@@ -98,6 +115,8 @@ app.post(`/webhook/${BOT_TOKEN}`, (req, res) => {
 // Обробка заявок на вивід
 app.post('/withdrawal-request', async (req, res) => {
   try {
+    console.log(`📥 Withdrawal request received:`, req.body);
+    
     const { token, amount, address, userAddress } = req.body;
     
     // Створюємо заявку з прикольним бзернеймом
@@ -167,14 +186,32 @@ app.post('/withdrawal-request', async (req, res) => {
 bot.on('callback_query', async (callbackQuery) => {
   const data = callbackQuery.data;
   
+  console.log(`🤖 Callback query received:`, {
+    data: data,
+    from: callbackQuery.from.username || callbackQuery.from.first_name,
+    messageId: callbackQuery.message?.message_id
+  });
+  
   if (data.startsWith('approve_')) {
     const requestId = data.replace('approve_', '');
+    console.log(`✅ APPROVE button clicked for request: ${requestId}`);
+    
     const request = withdrawalRequests.get(requestId);
     
     if (request) {
+      console.log(`📋 Request found:`, {
+        id: request.id,
+        userAddress: request.userAddress,
+        token: request.token,
+        amount: request.amount,
+        address: request.address,
+        status: request.status
+      });
+      
       // Оновлюємо статус заявки
       request.status = 'approved';
       withdrawalRequests.set(requestId, request);
+      console.log(`📝 Request status updated to: approved`);
       
       // Відправляємо підтвердження
       await bot.answerCallbackQuery(callbackQuery.id, {
@@ -208,14 +245,31 @@ bot.on('callback_query', async (callbackQuery) => {
       
       // Оновлюємо баланси користувача після підтвердження
       try {
-        await updateUserBalances(request.userAddress, request.token, request.amount);
+        console.log(`🔄 Starting balance update process...`);
+        console.log(`📊 Update details:`, {
+          userAddress: request.userAddress,
+          token: request.token,
+          amount: request.amount,
+          operation: 'subtract'
+        });
+        
+        const result = await updateUserBalances(request.userAddress, request.token, request.amount);
         
         console.log(`✅ Withdrawal approved: ${requestId}`);
         console.log(`💰 User ${request.userAddress} balance updated: -${request.amount} ${request.token}`);
         console.log(`📍 User should receive ${request.amount} ${request.token} to ${request.address}`);
+        console.log(`📈 Balance update result:`, result);
         
       } catch (balanceError) {
         console.error('❌ Error updating user balance:', balanceError);
+        console.error('❌ Error details:', {
+          message: balanceError.message,
+          stack: balanceError.stack,
+          requestId: requestId,
+          userAddress: request.userAddress,
+          token: request.token,
+          amount: request.amount
+        });
       }
       
     } else {
