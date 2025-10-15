@@ -179,6 +179,9 @@ BACKEND_URL=http://localhost:3002
 ### **Render Deployment**
 See [RENDER_DEPLOYMENT_GUIDE.md](RENDER_DEPLOYMENT_GUIDE.md) for detailed deployment instructions.
 
+### **Railway Deployment (Alternative)**
+See [RAILWAY_DEPLOYMENT_GUIDE.md](RAILWAY_DEPLOYMENT_GUIDE.md) for Railway deployment instructions.
+
 ### **Quick Deploy**
 ```bash
 ./deploy.sh
