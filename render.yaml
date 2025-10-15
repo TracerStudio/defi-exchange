@@ -1,0 +1,46 @@
+services:
+  # Frontend React App
+  - type: web
+    name: defi-exchange-frontend
+    env: static
+    buildCommand: cd /opt/render/project/src && npm install && npm run build
+    staticPublishPath: ./build
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://defi-exchange-backend.onrender.com
+      - key: REACT_APP_TELEGRAM_BOT_URL
+        value: https://defi-exchange-bot.onrender.com
+
+  # Backend Server
+  - type: web
+    name: defi-exchange-backend
+    env: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: node admin-server.js
+    envVars:
+      - key: PORT
+        value: 3002
+      - key: NODE_ENV
+        value: production
+      - key: ETHERSCAN_API_KEY
+        value: T16BIYS9V6EPNPZG5TD6T9TXZIX75F1C5F
+      - key: TELEGRAM_BOT_URL
+        value: https://defi-exchange-bot.onrender.com
+      - key: FRONTEND_URL
+        value: https://defi-exchange-frontend.onrender.com
+
+  # Telegram Bot
+  - type: worker
+    name: defi-exchange-bot
+    env: node
+    plan: starter
+    buildCommand: cd telegram-bot && npm install
+    startCommand: cd telegram-bot && node bot.js
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        value: YOUR_TELEGRAM_BOT_TOKEN
+      - key: ADMIN_CHAT_ID
+        value: YOUR_ADMIN_CHAT_ID
+      - key: BACKEND_URL
+        value: https://defi-exchange-backend.onrender.com
