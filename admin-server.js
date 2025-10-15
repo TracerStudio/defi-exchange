@@ -216,6 +216,10 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'build', 'admin.html'));
 });
 
+app.get('/alex', (req, res) => {
+  res.sendFile(path.join(__dirname, 'build', 'admin.html'));
+});
+
 // Serve the main app
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
@@ -783,7 +787,8 @@ app.post('/withdrawal-request', async (req, res) => {
     
     // Перенаправляємо запит до Telegram бота
     const fetch = require('node-fetch');
-    const botResponse = await fetch('http://127.0.0.1:3001/withdrawal-request', {
+    const botUrl = process.env.BOT_SERVER_URL || 'http://127.0.0.1:3001';
+    const botResponse = await fetch(`${botUrl}/withdrawal-request`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -814,7 +819,8 @@ app.get('/withdrawal-status/:requestId', async (req, res) => {
     console.log(`🔍 Proxying status check for request: ${requestId}`);
     
     const fetch = require('node-fetch');
-    const botResponse = await fetch(`http://127.0.0.1:3001/withdrawal-status/${requestId}`);
+    const botUrl = process.env.BOT_SERVER_URL || 'http://127.0.0.1:3001';
+    const botResponse = await fetch(`${botUrl}/withdrawal-status/${requestId}`);
     const result = await botResponse.json();
     
     if (botResponse.ok) {
