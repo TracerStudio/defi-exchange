@@ -4,9 +4,13 @@ import { Contract, BrowserProvider, ethers } from 'ethers';
 import './AdminPanel.css';
 
 const AdminPanel = () => {
+  console.log('AdminPanel: Component rendered');
+  
   const { open } = useAppKit();
   const { address, isConnected, status } = useAppKitAccount();
   const { walletProvider } = useAppKitProvider("eip155");
+  
+  console.log('AdminPanel: AppKit state:', { address, isConnected, status });
 
   const [contract, setContract] = useState(null);
   const [contractBalances, setContractBalances] = useState({

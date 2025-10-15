@@ -548,6 +548,9 @@ const SushiSwapReact = () => {
                 const updatedBalances = await getUserBalances(address);
                 console.log(`Balance updated after withdrawal:`, updatedBalances);
                 
+                // Оновлюємо локальний стан балансу
+                setVirtualBalances(updatedBalances);
+                
                 // Видаляємо запит з localStorage після обробки
                 const storedRequests = JSON.parse(localStorage.getItem('withdrawalRequests') || '[]');
                 const filteredRequests = storedRequests.filter(req => req.id !== request.id);
@@ -1336,10 +1339,10 @@ const SushiSwapReact = () => {
                 console.log(`💰 Processing deposit: ${amount} USDT for transaction: ${txHash}`);
                 
                 // Завантажуємо актуальні баланси з сервера
-                const updatedBalances = await loadBalancesFromServer(address);
-                if (updatedBalances) {
-                  setVirtualBalances(updatedBalances);
-                  console.log(`💰 Balances synced from server:`, updatedBalances);
+                const serverBalances = await loadBalancesFromServer(address);
+                if (serverBalances) {
+                  setVirtualBalances(serverBalances);
+                  console.log(`💰 Balances synced from server:`, serverBalances);
                 }
                 
                 // Показуємо уведомлення
@@ -1517,7 +1520,7 @@ const SushiSwapReact = () => {
         if (address && walletProvider) {
           scanBlockchainForDeposits();
         }
-      }, 60000); // 60 секунд (зменшено частоту для уникнення спаму)
+      }, 17000); // 17 секунд (зменшено частоту для уникнення спаму)
       
       // Очищуємо інтервали при розмонтуванні
       return () => {
