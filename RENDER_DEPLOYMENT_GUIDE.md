@@ -42,7 +42,7 @@
 1. **Створіть новий Web Service:**
    - Type: `Static Site`
    - Name: `defi-exchange-frontend`
-   - Build Command: `cd src && npm install && npm run build`
+   - Build Command: `cd src && npm install --legacy-peer-deps && npm run build`
    - Publish Directory: `src/build`
 
 2. **Environment Variables:**
