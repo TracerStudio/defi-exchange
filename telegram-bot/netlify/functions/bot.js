@@ -4,7 +4,7 @@ const express = require('express');
 // Telegram Bot Token (заміни на свій токен)
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '7769270215:AAH_R-Q14oxkKHU0a53xK4_evXWiQJBiO54';
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID || '-1002573326301';
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3002';
+const BACKEND_URL = process.env.BACKEND_URL || 'https://defi-exchange-backend.onrender.com';
 
 // Створюємо бота
 const bot = new TelegramBot(BOT_TOKEN, { polling: false });

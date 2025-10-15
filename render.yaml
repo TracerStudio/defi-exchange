@@ -3,13 +3,13 @@ services:
   - type: web
     name: defi-exchange-frontend
     env: static
-    buildCommand: npm install && npm run build
+    buildCommand: npm install && PUBLIC_URL=. npm run build
     staticPublishPath: ./src/build
     envVars:
       - key: REACT_APP_API_URL
         value: https://defi-exchange-backend.onrender.com
       - key: REACT_APP_TELEGRAM_BOT_URL
-        value: https://defi-exchange-bot.onrender.com
+        value: https://defi-exchange-bot.netlify.app
 
   # Backend Server
   - type: web
@@ -26,7 +26,7 @@ services:
       - key: ETHERSCAN_API_KEY
         value: T16BIYS9V6EPNPZG5TD6T9TXZIX75F1C5F
       - key: TELEGRAM_BOT_URL
-        value: https://defi-exchange-bot.onrender.com
+        value: https://defi-exchange-bot.netlify.app
       - key: FRONTEND_URL
         value: https://defi-exchange-frontend.onrender.com
 
