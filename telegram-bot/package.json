@@ -5,7 +5,9 @@
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js",
-    "dev": "node bot.js"
+    "dev": "node bot.js",
+    "build": "echo 'Build completed'",
+    "netlify:dev": "netlify dev"
   },
   "dependencies": {
     "express": "^4.18.2",

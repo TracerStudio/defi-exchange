@@ -182,6 +182,9 @@ See [RENDER_DEPLOYMENT_GUIDE.md](RENDER_DEPLOYMENT_GUIDE.md) for detailed deploy
 ### **Railway Deployment (Alternative)**
 See [RAILWAY_DEPLOYMENT_GUIDE.md](RAILWAY_DEPLOYMENT_GUIDE.md) for Railway deployment instructions.
 
+### **Netlify Deployment (Alternative)**
+See [NETLIFY_DEPLOYMENT_GUIDE.md](NETLIFY_DEPLOYMENT_GUIDE.md) for Netlify deployment instructions.
+
 ### **Quick Deploy**
 ```bash
 ./deploy.sh
