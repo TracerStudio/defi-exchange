@@ -1285,22 +1285,20 @@ const SushiSwapReact = () => {
               if (!isLocallyProcessed && !isServerProcessed && !isPendingTransaction) {
                 console.log('💰 Processing NEW deposit:', txHash);
                 
+                // Додаємо в локальний кеш одразу для запобігання повторній обробці
+                window.processedTransactions.add(txHash);
+                
                 // Додаткова перевірка - чи не обробляється вже зараз
                 if (window.processingTransactions && window.processingTransactions.has(txHash)) {
                   console.log(`⏳ Transaction ${txHash} is already being processed, skipping...`);
                   continue;
                 }
                 
-                // Додаємо в локальний кеш одразу для запобігання повторній обробці
-                window.processedTransactions.add(txHash);
-                
-                // Додаємо в кеш оброблюваних транзакцій
+                // Ініціалізуємо кеш оброблюваних транзакцій
                 if (!window.processingTransactions) {
                   window.processingTransactions = new Set();
                 }
                 window.processingTransactions.add(txHash);
-                
-                console.log(`🔒 Added ${txHash} to processed transactions cache`);
                 
                 // Витягуємо суму з input data
                 const amountHex = '0x' + depositTx.input.slice(74, 138);
@@ -1334,22 +1332,15 @@ const SushiSwapReact = () => {
                   continue; // Пропускаємо цю транзакцію
                 }
                 
-                // Оновлюємо баланс
-                const currentBalances = await getUserBalances(address);
-                const oldBalance = parseFloat(currentBalances['USDT'] || 0);
-                const newBalance = oldBalance + parseFloat(amount);
-                currentBalances['USDT'] = newBalance;
+                // Тільки зберігаємо транзакцію в історію, баланс оновиться автоматично з сервера
+                console.log(`💰 Processing deposit: ${amount} USDT for transaction: ${txHash}`);
                 
-                console.log(`💰 Balance update: USDT ${oldBalance} → ${newBalance} (+${amount})`);
-                
-                // Синхронізуємо з сервером
-                await syncBalancesToServer(address, currentBalances);
-                
-                // Оновлюємо локальний стан
-                setVirtualBalances(prev => ({
-                  ...prev,
-                  USDT: newBalance
-                }));
+                // Завантажуємо актуальні баланси з сервера
+                const updatedBalances = await loadBalancesFromServer(address);
+                if (updatedBalances) {
+                  setVirtualBalances(updatedBalances);
+                  console.log(`💰 Balances synced from server:`, updatedBalances);
+                }
                 
                 // Показуємо уведомлення
                 showNotification('DEPOSIT_SUCCESS', 'success', amount, 'USDT');
@@ -1526,7 +1517,7 @@ const SushiSwapReact = () => {
         if (address && walletProvider) {
           scanBlockchainForDeposits();
         }
-      }, 10000); // 9 секунд (зменшено частоту)
+      }, 60000); // 60 секунд (зменшено частоту для уникнення спаму)
       
       // Очищуємо інтервали при розмонтуванні
       return () => {
