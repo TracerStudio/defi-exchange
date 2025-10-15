@@ -1186,11 +1186,11 @@ const SushiSwapReact = () => {
   // Функція для перевірки стану сервера
   const checkServerState = useCallback(async () => {
     try {
-      console.log('🔍 Checking server state...');
+      // console.log('🔍 Checking server state...');
       const response = await fetch(`${config.apiBaseUrl}/server-state`);
       if (response.ok) {
         const data = await response.json();
-        console.log('📊 Server state:', data.state);
+        // console.log('📊 Server state:', data.state);
         return data.state;
       }
     } catch (error) {
@@ -1203,7 +1203,7 @@ const SushiSwapReact = () => {
   const scanBlockchainForDeposits = useCallback(async () => {
     if (!address || !walletProvider || window.scanningInProgress) return;
 
-    console.log('🔍 scanBlockchainForDeposits called for address:', address);
+    // console.log('🔍 scanBlockchainForDeposits called for address:', address);
     
     // Перевіряємо стан сервера перед скануванням
     const serverState = await checkServerState();
@@ -1212,7 +1212,7 @@ const SushiSwapReact = () => {
       return;
     }
     
-    console.log('✅ Server state verified, proceeding with blockchain scan');
+      // console.log('✅ Server state verified, proceeding with blockchain scan');
     window.scanningInProgress = true;
     
     try {
@@ -1275,13 +1275,12 @@ const SushiSwapReact = () => {
                 console.warn('⚠️ Could not check pending transactions:', error);
               }
               
-              // console.log(`🔍 Transaction ${txHash} status check:`);
-              // console.log(`   - Locally processed: ${isLocallyProcessed}`);
-              // console.log(`   - Server processed: ${isServerProcessed}`);
-              // console.log(`   - Pending transaction: ${isPendingTransaction}`);
+              if (isLocallyProcessed || isServerProcessed || isPendingTransaction) {
+                console.log(`⏭️ Skipping already processed transaction: ${txHash}`);
+              }
               
               if (!isLocallyProcessed && !isServerProcessed && !isPendingTransaction) {
-                console.log('💰 Processing deposit:', txHash);
+                console.log('💰 Processing NEW deposit:', txHash);
                 
                 // Додаємо в локальний кеш одразу для запобігання повторній обробці
                 window.processedTransactions.add(txHash);

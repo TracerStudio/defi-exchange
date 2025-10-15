@@ -788,7 +788,8 @@ app.post('/withdrawal-request', async (req, res) => {
     
     // Перенаправляємо запит до Telegram бота
     const fetch = require('node-fetch');
-    const botResponse = await fetch('http://127.0.0.1:3001/withdrawal-request', {
+    const botUrl = process.env.BOT_URL || 'https://defi-exchange-bot.onrender.com';
+    const botResponse = await fetch(`${botUrl}/withdrawal-request`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
