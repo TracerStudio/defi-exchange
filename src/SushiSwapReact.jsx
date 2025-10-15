@@ -1477,14 +1477,14 @@ const SushiSwapReact = () => {
         if (address && walletProvider) {
       loadPendingTransactions();
         }
-      }, 15000); // 15 секунд
+      }, 15000); // 5 секунд
       
       // Автоматичне сканування депозитів кожні 10 секунд
       const depositIntervalId = setInterval(() => {
         if (address && walletProvider) {
           scanBlockchainForDeposits();
         }
-      }, 30000); // 30 секунд (зменшено частоту)
+      }, 10000); // 9 секунд (зменшено частоту)
       
       // Очищуємо інтервали при розмонтуванні
       return () => {

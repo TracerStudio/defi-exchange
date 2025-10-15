@@ -11,6 +11,7 @@
     "force-stop": "node force-stop.js",
     "check": "node check-status.js",
     "kill-all": "node kill-all-instances.js",
+    "setup-webhook": "node setup-webhook.js",
     "restart": "npm run kill-all && sleep 5 && npm start"
   },
   "dependencies": {
