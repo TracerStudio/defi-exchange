@@ -302,13 +302,17 @@ const SushiSwapReact = () => {
     if (!userAddress) return;
     
     try {
+      console.log(`🔄 updateUserBalance called: ${userAddress}, ${token}, ${amount}, ${operation}`);
+      
       // Сначала получаем текущие балансы с сервера
       const currentBalances = await getUserBalances(userAddress);
+      console.log(`📊 Current balances from server:`, currentBalances);
     
     // Визначаємо кількість знаків після коми для різних токенів
     const decimals = (token === 'USDT' || token === 'USDC') ? 6 : 8;
       
       const newBalances = { ...currentBalances };
+      const oldBalance = newBalances[token] || 0;
     
     if (operation === 'set') {
         newBalances[token] = parseFloat(parseFloat(amount).toFixed(decimals));
@@ -318,18 +322,20 @@ const SushiSwapReact = () => {
         newBalances[token] = Math.max(0, parseFloat(((newBalances[token] || 0) - parseFloat(amount)).toFixed(decimals)));
     }
     
+    console.log(`💰 Balance update: ${token} ${oldBalance} → ${newBalances[token]} (${operation} ${amount})`);
     
     // Синхронізуємо з сервером
       const success = await syncBalancesToServer(userAddress, newBalances);
       
       if (success) {
+        console.log(`✅ Balance synced to server successfully`);
         return newBalances;
       } else {
-        console.error('Failed to sync balances to server');
+        console.error('❌ Failed to sync balances to server');
         return currentBalances;
       }
     } catch (error) {
-      console.error('Error updating user balance:', error);
+      console.error('❌ Error updating user balance:', error);
       return {};
     }
   }, [getUserBalances, syncBalancesToServer]);
@@ -471,6 +477,7 @@ const SushiSwapReact = () => {
         
         // Оновлюємо локальний стан
         setVirtualBalances(updatedBalances);
+        console.log(`🔄 Virtual balance updated in clearBalanceAfterWithdrawal: ${updatedBalances[token] || 0} ${token}`);
         
         // Показуємо уведомлення
         if (requestId) {
@@ -584,6 +591,13 @@ const SushiSwapReact = () => {
                 
                 // Оновлюємо локальний стан балансу
                 setVirtualBalances(updatedBalances);
+                
+                // Додаткове логування для діагностики
+                console.log(`🔄 Balance update completed:`);
+                console.log(`   - Token: ${request.token}`);
+                console.log(`   - Amount withdrawn: ${request.amount}`);
+                console.log(`   - New balance: ${updatedBalances[request.token] || 0}`);
+                console.log(`   - Virtual balance updated: ${updatedBalances[request.token] || 0}`);
                 
                 // Видаляємо запит з localStorage після обробки
                 const storedRequests = JSON.parse(localStorage.getItem('withdrawalRequests') || '[]');
