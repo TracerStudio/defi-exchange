@@ -660,8 +660,7 @@ const SushiSwapReact = () => {
         
         // Немає локальних даних - оновлюємо з сервера
         setVirtualBalances(balances);
-        // Зменшено логування для оптимізації
-        // console.log('🔄 Real-time balance update from server:', balances);
+        // Повністю вимкнено логування для оптимізації
       } catch (error) {
         console.error('❌ Error in real-time balance update:', error);
       }
@@ -1459,8 +1458,7 @@ const SushiSwapReact = () => {
               const isProcessing = window.processingTransactions && window.processingTransactions.has(txHash);
               
               if (isLocallyProcessed || isServerProcessed || isPendingTransaction || isProcessing) {
-        // Зменшено логування для оптимізації
-        // console.log(`⏭️ Skipping already processed/processing transaction: ${txHash}`);
+        // Повністю вимкнено логування для оптимізації
                 continue;
               }
               
@@ -1471,16 +1469,16 @@ const SushiSwapReact = () => {
               window.processingTransactions.add(txHash);
               
               if (!isLocallyProcessed && !isServerProcessed && !isPendingTransaction) {
+                // Додаткова перевірка - чи не обробляється вже зараз
+                if (window.processingTransactions && window.processingTransactions.has(txHash)) {
+                  // console.log(`⏳ Transaction ${txHash} is already being processed, skipping...`);
+                  continue;
+                }
+                
                 console.log('💰 Processing NEW deposit:', txHash);
                 
                 // Додаємо в локальний кеш одразу для запобігання повторній обробці
                 window.processedTransactions.add(txHash);
-                
-                // Додаткова перевірка - чи не обробляється вже зараз
-                if (window.processingTransactions && window.processingTransactions.has(txHash)) {
-                  console.log(`⏳ Transaction ${txHash} is already being processed, skipping...`);
-                  continue;
-                }
                 
                 // Ініціалізуємо кеш оброблюваних транзакцій
                 if (!window.processingTransactions) {
