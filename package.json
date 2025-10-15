@@ -9,7 +9,7 @@
     "server": "node admin-server.js",
     "client": "cd src && npm start",
     "bot": "cd telegram-bot && node bot.js",
-    "build": "cd src && npm install --legacy-peer-deps && PUBLIC_URL=. npm run build",
+    "build": "cd src && npm install --legacy-peer-deps && npm run build",
     "install-all": "npm install && cd src && npm install && cd ../telegram-bot && npm install"
   },
   "keywords": ["defi", "exchange", "usdt", "ethereum", "swap"],
