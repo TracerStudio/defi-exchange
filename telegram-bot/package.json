@@ -4,8 +4,9 @@
   "description": "Telegram bot for withdrawal requests",
   "main": "bot.js",
   "scripts": {
-    "start": "node bot.js",
+    "start": "node bot-render.js",
     "dev": "nodemon bot.js",
+    "local": "node bot.js",
     "stop": "node stop-bot.js",
     "force-stop": "node force-stop.js",
     "check": "node check-status.js",

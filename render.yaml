@@ -14,8 +14,6 @@ services:
         value: https://defi-exchange-main.onrender.com
       - key: REACT_APP_API_BASE_URL
         value: https://defi-exchange-main.onrender.com/api
-      - key: BOT_SERVER_URL
-        value: https://defi-exchange-bot.onrender.com
     healthCheckPath: /
     autoDeploy: true
 
@@ -35,5 +33,5 @@ services:
         value: https://defi-exchange-main.onrender.com
       - key: ADMIN_CHAT_ID
         value: "-1002573326301"
-    healthCheckPath: /
+    healthCheckPath: /health
     autoDeploy: true

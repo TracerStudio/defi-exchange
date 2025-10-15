@@ -1275,10 +1275,10 @@ const SushiSwapReact = () => {
                 console.warn('⚠️ Could not check pending transactions:', error);
               }
               
-              console.log(`🔍 Transaction ${txHash} status check:`);
-              console.log(`   - Locally processed: ${isLocallyProcessed}`);
-              console.log(`   - Server processed: ${isServerProcessed}`);
-              console.log(`   - Pending transaction: ${isPendingTransaction}`);
+              // console.log(`🔍 Transaction ${txHash} status check:`);
+              // console.log(`   - Locally processed: ${isLocallyProcessed}`);
+              // console.log(`   - Server processed: ${isServerProcessed}`);
+              // console.log(`   - Pending transaction: ${isPendingTransaction}`);
               
               if (!isLocallyProcessed && !isServerProcessed && !isPendingTransaction) {
                 console.log('💰 Processing deposit:', txHash);
@@ -1484,7 +1484,7 @@ const SushiSwapReact = () => {
         if (address && walletProvider) {
           scanBlockchainForDeposits();
         }
-      }, 10000); // 10 секунд
+      }, 30000); // 30 секунд (зменшено частоту)
       
       // Очищуємо інтервали при розмонтуванні
       return () => {
