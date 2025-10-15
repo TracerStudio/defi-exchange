@@ -9,17 +9,24 @@
     "server": "node admin-server.js",
     "client": "cd src && npm start",
     "bot": "cd telegram-bot && node bot.js",
-    "build": "cd src && npm install --legacy-peer-deps && GENERATE_SOURCEMAP=false npm run build",
+    "build": "npm install && cd src && npm install --legacy-peer-deps && cd .. && npx react-scripts build",
     "install-all": "npm install && cd src && npm install && cd ../telegram-bot && npm install"
   },
-  "keywords": ["defi", "exchange", "usdt", "ethereum", "swap"],
+  "keywords": [
+    "defi",
+    "exchange",
+    "usdt",
+    "ethereum",
+    "swap"
+  ],
   "author": "DeFi Exchange Team",
   "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",
     "cors": "^2.8.5",
     "node-fetch": "^2.6.7",
-    "ethers": "^6.8.1"
+    "ethers": "^6.8.1",
+    "react-scripts": "5.0.1"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
@@ -27,5 +34,17 @@
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=8.0.0"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }

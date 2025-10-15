@@ -4,7 +4,7 @@ services:
     name: defi-exchange-app
     env: node
     plan: starter
-    buildCommand: npm install && cd src && npm install --legacy-peer-deps && GENERATE_SOURCEMAP=false npm run build
+    buildCommand: npm install && cd src && npm install --legacy-peer-deps && cd .. && npx react-scripts build
     startCommand: node admin-server.js
     envVars:
       - key: PORT
