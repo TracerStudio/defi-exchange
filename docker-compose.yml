@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # Основний додаток (адмін сервер + фронт)
+  defi-exchange:
+    build: .
+    ports:
+      - "3000:3000"  # React фронт
+      - "3002:3002"  # Адмін сервер
+    environment:
+      - NODE_ENV=production
+      - PORT=3002
+    volumes:
+      - ./database:/app/database
+    restart: unless-stopped
+    networks:
+      - defi-network
+
+  # Telegram бот
+  telegram-bot:
+    build: ./telegram-bot
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ./telegram-bot/data:/app/data
+    restart: unless-stopped
+    networks:
+      - defi-network
+    depends_on:
+      - defi-exchange
+
+networks:
+  defi-network:
+    driver: bridge
+
+volumes:
+  database:
+  bot-data:

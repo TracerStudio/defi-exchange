@@ -1,39 +1,33 @@
 {
-  "name": "defi-exchange",
+  "name": "defi-exchange-platform",
   "version": "1.0.0",
-  "description": "DeFi Exchange Platform with USDT deposits and virtual swaps",
-  "main": "admin-server.js",
+  "description": "Decentralized Exchange Platform",
+  "main": "src/index.js",
   "scripts": {
-    "start": "node admin-server.js",
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "server": "node admin-server.js",
-    "client": "cd src && npm start",
-    "bot": "cd telegram-bot && node bot.js",
-    "build": "npm install && cd src && npm install --legacy-peer-deps && cd .. && npx react-scripts build",
-    "install-all": "npm install && cd src && npm install && cd ../telegram-bot && npm install"
+    "start": "react-scripts start --host 0.0.0.0",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "admin": "node admin-server.js",
+    "admin:dev": "npm start",
+    "prod:build": "npm run build",
+    "prod:start": "node admin-server.js & npx serve -s build -l 3000",
+    "docker:build": "docker build -t defi-exchange .",
+    "docker:run": "docker run -p 3000:3000 -p 3002:3002 defi-exchange"
   },
-  "keywords": [
-    "defi",
-    "exchange",
-    "usdt",
-    "ethereum",
-    "swap"
-  ],
-  "author": "DeFi Exchange Team",
-  "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2",
+    "@reown/appkit": "^1.8.9",
+    "@reown/appkit-adapter-ethers": "^1.8.9",
+    "axios": "^1.12.2",
+    "body-parser": "^2.2.0",
     "cors": "^2.8.5",
-    "node-fetch": "^2.6.7",
-    "ethers": "^6.8.1",
-    "react-scripts": "5.0.1"
-  },
-  "devDependencies": {
-    "concurrently": "^8.2.2"
-  },
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=8.0.0"
+    "ethers": "^6.0.0",
+    "express": "^4.18.2",
+    "node-fetch": "^2.7.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-scripts": "5.0.1",
+    "serve": "^14.2.1"
   },
   "browserslist": {
     "production": [
@@ -46,5 +40,16 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  }
+  },
+  "keywords": [
+    "react",
+    "defi",
+    "crypto",
+    "exchange",
+    "platform"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
 }
+
+

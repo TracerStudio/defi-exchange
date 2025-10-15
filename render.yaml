@@ -1,38 +1,31 @@
 services:
-  # Combined Frontend + Backend
+  # Основний додаток (адмін сервер + фронт)
   - type: web
-    name: defi-exchange-app
+    name: defi-exchange-main
     env: node
-    plan: starter
-    buildCommand: npm install && cd src && npm install --legacy-peer-deps && cd .. && npx react-scripts build
-    startCommand: node admin-server.js
+    buildCommand: npm install && npm run build
+    startCommand: node admin-server.js & npx serve -s build -l 3000
     envVars:
-      - key: PORT
-        value: 3002
       - key: NODE_ENV
         value: production
-      - key: ETHERSCAN_API_KEY
-        value: T16BIYS9V6EPNPZG5TD6T9TXZIX75F1C5F
-      - key: TELEGRAM_BOT_URL
-        value: https://defi-exchange-bot.netlify.app
-      - key: FRONTEND_URL
-        value: https://defi-exchange-app.onrender.com
-      - key: REACT_APP_API_URL
-        value: https://defi-exchange-app.onrender.com
-      - key: REACT_APP_TELEGRAM_BOT_URL
-        value: https://defi-exchange-bot.netlify.app
+      - key: PORT
+        value: 3002
+    healthCheckPath: /
+    autoDeploy: true
 
-  # Telegram Bot
-  - type: worker
+  # Telegram бот
+  - type: web
     name: defi-exchange-bot
     env: node
-    plan: starter
-    buildCommand: cd telegram-bot && npm install
-    startCommand: cd telegram-bot && node bot.js
+    rootDir: telegram-bot
+    buildCommand: npm install
+    startCommand: npm start
     envVars:
+      - key: NODE_ENV
+        value: production
       - key: TELEGRAM_BOT_TOKEN
-        value: YOUR_TELEGRAM_BOT_TOKEN
-      - key: ADMIN_CHAT_ID
-        value: YOUR_ADMIN_CHAT_ID
-      - key: BACKEND_URL
-        value: https://defi-exchange-backend.onrender.com
+        sync: false  # Встановіть вручну в Dashboard
+      - key: ADMIN_SERVER_URL
+        value: https://defi-exchange-main.onrender.com
+    healthCheckPath: /
+    autoDeploy: true

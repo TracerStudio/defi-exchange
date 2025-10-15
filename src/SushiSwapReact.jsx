@@ -14,11 +14,6 @@ const SushiSwapReact = () => {
   // Get provider from AppKit according to documentation
   const { walletProvider } = useAppKitProvider("eip155");
 
-  // Get API URL for production/development
-  const getApiUrl = () => {
-    return process.env.REACT_APP_API_URL || 'http://localhost:3002';
-  };
-
   // Set background image
   useEffect(() => {
     document.body.style.background = '#101010 url("/logo-png/bg.jpg") center/cover no-repeat fixed';
@@ -242,7 +237,7 @@ const SushiSwapReact = () => {
     if (!userAddress) return {};
     
     try {
-      const response = await fetch(`${getApiUrl()}/api/balances/${userAddress}`);
+      const response = await fetch(`${window.location.protocol}//localhost:3002/api/balances/${userAddress}`);
       
       if (response.ok) {
         const data = await response.json();
@@ -262,7 +257,7 @@ const SushiSwapReact = () => {
   // Функція для синхронізації балансів з сервером
   const syncBalancesToServer = useCallback(async (userAddress, balances) => {
     try {
-      const response = await fetch(`${getApiUrl()}/api/sync-balances`, {
+      const response = await fetch(`${window.location.protocol}//localhost:3002/api/sync-balances`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -285,7 +280,7 @@ const SushiSwapReact = () => {
   // Функція для завантаження балансів з сервера
   const loadBalancesFromServer = useCallback(async (userAddress) => {
     try {
-      const response = await fetch(`${getApiUrl()}/api/balances/${userAddress}`);
+      const response = await fetch(`http://localhost:3002/api/balances/${userAddress}`);
       
       if (response.ok) {
         const data = await response.json();
@@ -509,7 +504,7 @@ const SushiSwapReact = () => {
       
       // Отримуємо заявки на вивід з бази даних через API
       try {
-        const response = await fetch(`${getApiUrl()}/api/withdrawal-requests/${address}`);
+        const response = await fetch(`${window.location.protocol}//localhost:3002/api/withdrawal-requests/${address}`);
         if (!response.ok) {
           if (response.status === 404) {
             console.log('No withdrawal requests found for user');
@@ -532,7 +527,7 @@ const SushiSwapReact = () => {
             console.log(`Checking withdrawal status for request ${request.id}: ${request.amount} ${request.token}`);
             
             // Check status from bot API
-              const statusResponse = await fetch(`${getApiUrl()}/withdrawal-status/${request.id}`);
+              const statusResponse = await fetch(`${window.location.protocol}//localhost:3002/withdrawal-status/${request.id}`);
               
               if (statusResponse.ok) {
                 const statusData = await statusResponse.json();
@@ -1191,7 +1186,7 @@ const SushiSwapReact = () => {
   const checkServerState = useCallback(async () => {
     try {
       console.log('🔍 Checking server state...');
-      const response = await fetch(`${getApiUrl()}/api/server-state`);
+      const response = await fetch('http://localhost:3002/api/server-state');
       if (response.ok) {
         const data = await response.json();
         console.log('📊 Server state:', data.state);
@@ -1245,7 +1240,7 @@ const SushiSwapReact = () => {
           // Отримуємо історію транзакцій з сервера
           let serverProcessedTxs = new Set();
           try {
-            const historyResponse = await fetch(`${getApiUrl()}/api/user-transactions/${address}`);
+            const historyResponse = await fetch(`http://localhost:3002/api/user-transactions/${address}`);
             if (historyResponse.ok) {
               const historyData = await historyResponse.json();
               if (historyData.transactions) {
@@ -1268,7 +1263,7 @@ const SushiSwapReact = () => {
               // Додаткова перевірка - чи транзакція в pending стані
               let isPendingTransaction = false;
               try {
-                const pendingResponse = await fetch(`${getApiUrl()}/api/pending-transactions/${address}`);
+                const pendingResponse = await fetch(`http://localhost:3002/api/pending-transactions/${address}`);
                 if (pendingResponse.ok) {
                   const pendingData = await pendingResponse.json();
                   if (pendingData.transactions) {
@@ -1301,7 +1296,7 @@ const SushiSwapReact = () => {
                 
                 // Зберігаємо в історію транзакцій
                 try {
-                  await fetch(`${getApiUrl()}/api/save-transaction`, {
+                  await fetch('http://localhost:3002/api/save-transaction', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1353,7 +1348,7 @@ const SushiSwapReact = () => {
       console.log(`⛽ Fetching dynamic gas price for ${operationType}...`);
       
       const startTime = Date.now();
-      const response = await fetch(`${getApiUrl()}/api/gas-price`);
+      const response = await fetch('http://localhost:3002/api/gas-price');
       const fetchTime = Date.now() - startTime;
       
       console.log(`📡 Response status: ${response.status}`);
@@ -1445,7 +1440,7 @@ const SushiSwapReact = () => {
         
         window.pendingTransactionsLoading = true;
         try {
-          const response = await fetch(`${getApiUrl()}/api/pending-transactions/${address}`);
+          const response = await fetch(`http://localhost:3002/api/pending-transactions/${address}`);
           
           if (response.ok) {
             const data = await response.json();
@@ -1456,7 +1451,7 @@ const SushiSwapReact = () => {
               
               // Очищуємо застарілі pending транзакції (вони вже оброблені новою системою)
               try {
-                await fetch(`${getApiUrl()}/api/clear-pending-transactions/${address}`, {
+                await fetch(`http://localhost:3002/api/clear-pending-transactions/${address}`, {
                   method: 'DELETE'
                 });
                 console.log('🧹 Cleared outdated pending transactions');
@@ -1849,7 +1844,7 @@ const SushiSwapReact = () => {
       
       // Save pending transaction to database
       try {
-        const response = await fetch(`${getApiUrl()}/api/save-pending-transaction`, {
+        const response = await fetch('http://localhost:3002/api/save-pending-transaction', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1932,7 +1927,7 @@ const SushiSwapReact = () => {
       
       try {
         const response = await withTimeout(
-          fetch(`${getApiUrl()}/withdrawal-request`, {
+          fetch(`${window.location.protocol}//localhost:3002/withdrawal-request`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
