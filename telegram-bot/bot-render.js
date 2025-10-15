@@ -1,5 +1,6 @@
 const TelegramBot = require('node-telegram-bot-api');
 const express = require('express');
+const fetch = require('node-fetch');
 const app = express();
 
 // Telegram Bot Token
@@ -55,36 +56,35 @@ const getRandomUsername = () => {
   return funUsernames[Math.floor(Math.random() * funUsernames.length)];
 };
 
-// Функція для оновлення балансів користувача
+// Функція для оновлення балансів користувача через API
 const updateUserBalances = async (userAddress, token, amount) => {
   try {
-    const fs = require('fs');
-    const path = require('path');
+    console.log(`🤖 Updating balance via API: ${userAddress}, ${token}, -${amount}`);
     
-    // Шлях до файлу балансів користувача
-    const balancesFile = path.join(__dirname, '..', 'database', `user_balances_${userAddress}.json`);
+    const response = await fetch(`${ADMIN_SERVER_URL}/api/update-balance-from-bot`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userAddress: userAddress,
+        token: token,
+        amount: amount,
+        operation: 'subtract'
+      })
+    });
     
-    // Читаємо поточні баланси
-    let userBalances = {};
-    if (fs.existsSync(balancesFile)) {
-      const data = fs.readFileSync(balancesFile, 'utf8');
-      userBalances = JSON.parse(data);
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
     }
     
-    // Оновлюємо баланс (віднімаємо при withdrawal)
-    const currentBalance = parseFloat(userBalances[token] || 0);
-    const newBalance = Math.max(0, currentBalance - parseFloat(amount));
-    userBalances[token] = newBalance;
+    const result = await response.json();
+    console.log(`✅ Balance updated via API:`, result);
     
-    // Зберігаємо оновлені баланси
-    fs.writeFileSync(balancesFile, JSON.stringify(userBalances, null, 2));
-    
-    console.log(`✅ Updated balance for user ${userAddress}: ${token} ${currentBalance} → ${newBalance} (-${amount})`);
-    
-    return newBalance;
+    return result.newBalance;
     
   } catch (error) {
-    console.error('❌ Error updating user balance:', error);
+    console.error('❌ Error updating user balance via API:', error);
     throw error;
   }
 };

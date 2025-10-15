@@ -288,6 +288,71 @@ app.get('/test-bot-connection', async (req, res) => {
   }
 });
 
+// API для оновлення балансу з бота (для webhook)
+app.post('/api/update-balance-from-bot', (req, res) => {
+  try {
+    const { userAddress, token, amount, operation } = req.body;
+    
+    console.log('🤖 Bot balance update request:', { userAddress, token, amount, operation });
+    
+    if (!userAddress || !token || !amount || !operation) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    // Створюємо директорію database якщо не існує
+    const databaseDir = path.join(__dirname, 'database');
+    if (!fs.existsSync(databaseDir)) {
+      fs.mkdirSync(databaseDir, { recursive: true });
+    }
+    
+    const balancesFile = path.join(databaseDir, `user_balances_${userAddress}.json`);
+    
+    // Читаємо поточні баланси
+    let userBalances = {};
+    if (fs.existsSync(balancesFile)) {
+      try {
+        userBalances = JSON.parse(fs.readFileSync(balancesFile, 'utf8'));
+      } catch (error) {
+        console.error('Error reading balances file:', error);
+        userBalances = {};
+      }
+    }
+    
+    // Оновлюємо баланс
+    const currentBalance = parseFloat(userBalances[token] || 0);
+    let newBalance;
+    
+    if (operation === 'subtract') {
+      newBalance = Math.max(0, currentBalance - parseFloat(amount));
+    } else if (operation === 'add') {
+      newBalance = currentBalance + parseFloat(amount);
+    } else {
+      return res.status(400).json({ error: 'Invalid operation. Use "add" or "subtract"' });
+    }
+    
+    userBalances[token] = newBalance.toFixed(6);
+    
+    // Зберігаємо оновлені баланси
+    fs.writeFileSync(balancesFile, JSON.stringify(userBalances, null, 2));
+    
+    console.log(`✅ Bot updated balance for ${userAddress}: ${token} ${currentBalance} → ${newBalance} (${operation} ${amount})`);
+    
+    res.json({ 
+      success: true, 
+      userAddress, 
+      token, 
+      oldBalance: currentBalance, 
+      newBalance: newBalance,
+      operation,
+      amount 
+    });
+    
+  } catch (error) {
+    console.error('❌ Error updating balance from bot:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // API для синхронізації балансів між пристроями
 app.post('/api/sync-balances', (req, res) => {
   try {
