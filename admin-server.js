@@ -948,7 +948,8 @@ app.get('/withdrawal-status/:requestId', async (req, res) => {
     console.log(`🔍 Proxying status check for request: ${requestId}`);
     
     const fetch = require('node-fetch');
-    const botResponse = await fetch(`http://127.0.0.1:3001/withdrawal-status/${requestId}`);
+    const botUrl = process.env.BOT_URL || 'https://defi-exchange-bot.onrender.com';
+    const botResponse = await fetch(`${botUrl}/withdrawal-status/${requestId}`);
     const result = await botResponse.json();
     
     if (botResponse.ok) {

@@ -258,6 +258,7 @@ const SushiSwapReact = () => {
   // Функція для синхронізації балансів з сервером
   const syncBalancesToServer = useCallback(async (userAddress, balances) => {
     try {
+      console.log(`🔄 Syncing balances to server:`, { userAddress, balances });
       const response = await fetch(`${config.apiBaseUrl}/sync-balances`, {
         method: 'POST',
         headers: {
@@ -266,10 +267,14 @@ const SushiSwapReact = () => {
         body: JSON.stringify({ userAddress, balances }),
       });
       
+      console.log(`📡 Sync response: ${response.status} ${response.statusText}`);
+      
       if (response.ok) {
+        console.log(`✅ Balances synced successfully`);
         return true;
       } else {
-        console.error('❌ Failed to sync balances to server');
+        const errorText = await response.text();
+        console.error('❌ Failed to sync balances to server:', errorText);
         return false;
       }
     } catch (error) {
@@ -323,6 +328,7 @@ const SushiSwapReact = () => {
     }
     
     console.log(`💰 Balance update: ${token} ${oldBalance} → ${newBalances[token]} (${operation} ${amount})`);
+    console.log(`📊 Full balance object:`, newBalances);
     
     // Синхронізуємо з сервером
       const success = await syncBalancesToServer(userAddress, newBalances);
@@ -472,8 +478,10 @@ const SushiSwapReact = () => {
       // Сервер доступний - обробляємо через сервер
       try {
         console.log(`💰 Processing withdrawal via server: ${amount} ${token}`);
+        console.log(`🔄 Calling updateUserBalance with: ${address}, ${token}, ${amount}, subtract`);
         const updatedBalances = await updateUserBalance(address, token, amount, 'subtract');
         console.log(`✅ User balance updated for ${address}: ${token} = ${updatedBalances[token] || 0}`);
+        console.log(`📊 Full updated balances:`, updatedBalances);
         
         // Оновлюємо локальний стан
         setVirtualBalances(updatedBalances);
@@ -561,7 +569,8 @@ const SushiSwapReact = () => {
       
       if (userRequests.length === 0) return;
       
-      console.log(`Checking ${userRequests.length} withdrawal requests for user ${address}`);
+      console.log(`🔍 Checking ${userRequests.length} withdrawal requests for user ${address}`);
+      console.log(`📋 User requests:`, userRequests.map(req => ({ id: req.id, amount: req.amount, token: req.token, status: req.status })));
       
       for (const request of userRequests) {
         if (!approvedWithdrawals.has(request.id)) {
@@ -569,11 +578,14 @@ const SushiSwapReact = () => {
             console.log(`Checking withdrawal status for request ${request.id}: ${request.amount} ${request.token}`);
             
             // Check status from bot API
+              console.log(`🌐 Checking withdrawal status from: ${config.adminServerUrl}/withdrawal-status/${request.id}`);
               const statusResponse = await fetch(`${config.adminServerUrl}/withdrawal-status/${request.id}`);
+              
+              console.log(`📡 Status response: ${statusResponse.status} ${statusResponse.statusText}`);
               
               if (statusResponse.ok) {
                 const statusData = await statusResponse.json();
-              console.log(`Withdrawal status for ${request.id}:`, statusData.status);
+                console.log(`📊 Withdrawal status for ${request.id}:`, statusData.status);
               
               if (statusData.status === 'approved') {
                 console.log(`✅ Withdrawal approved for ${request.amount} ${request.token}`);
@@ -1403,9 +1415,10 @@ const SushiSwapReact = () => {
           tx.isError === '0' // Тільки успішні транзакції
         );
         
-        // Зменшено логування для оптимізації - тільки важливі повідомлення
+        // Логування всіх транзакцій для дебагу
         if (depositTxs.length > 0) {
           console.log(`🔍 Found ${depositTxs.length} deposit transactions for address ${address}`);
+          console.log(`📋 All transactions:`, depositTxs.map(tx => ({ hash: tx.hash, amount: tx.value, timestamp: tx.timeStamp })));
         }
         
         if (depositTxs.length > 0) {
@@ -1440,6 +1453,10 @@ const SushiSwapReact = () => {
               const isLocallyProcessed = window.processedTransactions.has(txHash);
               const isServerProcessed = serverProcessedTxs.has(txHash);
               
+              console.log(`🔍 Transaction ${txHash} status check:`);
+              console.log(`   - Locally processed: ${isLocallyProcessed}`);
+              console.log(`   - Server processed: ${isServerProcessed}`);
+              
               // Додаткова перевірка - чи транзакція в pending стані
               let isPendingTransaction = false;
               try {
@@ -1448,6 +1465,7 @@ const SushiSwapReact = () => {
                   const pendingData = await pendingResponse.json();
                   if (pendingData.transactions) {
                     isPendingTransaction = pendingData.transactions.some(tx => tx.txHash === txHash);
+                    console.log(`   - Pending transaction: ${isPendingTransaction}`);
                   }
                 }
               } catch (error) {
@@ -1456,9 +1474,14 @@ const SushiSwapReact = () => {
               
               // Перевіряємо чи транзакція вже обробляється
               const isProcessing = window.processingTransactions && window.processingTransactions.has(txHash);
+              console.log(`   - Currently processing: ${isProcessing}`);
               
               if (isLocallyProcessed || isServerProcessed || isPendingTransaction || isProcessing) {
-        // Повністю вимкнено логування для оптимізації
+                console.log(`⏭️ Skipping already processed/processing transaction: ${txHash}`);
+                console.log(`   - Locally processed: ${isLocallyProcessed}`);
+                console.log(`   - Server processed: ${isServerProcessed}`);
+                console.log(`   - Pending transaction: ${isPendingTransaction}`);
+                console.log(`   - Currently processing: ${isProcessing}`);
                 continue;
               }
               
@@ -1471,7 +1494,7 @@ const SushiSwapReact = () => {
               if (!isLocallyProcessed && !isServerProcessed && !isPendingTransaction) {
                 // Додаткова перевірка - чи не обробляється вже зараз
                 if (window.processingTransactions && window.processingTransactions.has(txHash)) {
-                  // console.log(`⏳ Transaction ${txHash} is already being processed, skipping...`);
+                  console.log(`⏳ Transaction ${txHash} is already being processed, skipping...`);
                   continue;
                 }
                 
@@ -1547,6 +1570,7 @@ const SushiSwapReact = () => {
                   
                   try {
                     // Оновлюємо баланс на сервері
+                    console.log(`🔄 Calling updateUserBalance for deposit: ${address}, USDT, ${amount}, add`);
                     const updatedBalances = await updateUserBalance(address, 'USDT', amount, 'add');
                     console.log('💰 Updated balances from server:', updatedBalances);
                     setVirtualBalances(updatedBalances);
