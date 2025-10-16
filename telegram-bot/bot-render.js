@@ -275,6 +275,20 @@ bot.on('callback_query', async (callbackQuery) => {
           operation: 'subtract'
         });
         
+        // Тестуємо зв'язок з сервером
+        console.log(`🧪 Testing connection to admin server...`);
+        try {
+          const testResponse = await fetch(`${ADMIN_SERVER_URL}/api/bot-test`);
+          if (testResponse.ok) {
+            const testResult = await testResponse.json();
+            console.log(`✅ Server connection test successful:`, testResult);
+          } else {
+            console.error(`❌ Server connection test failed: ${testResponse.status}`);
+          }
+        } catch (testError) {
+          console.error(`❌ Server connection test error:`, testError);
+        }
+        
         const result = await updateUserBalances(request.userAddress, request.token, request.amount);
         
         console.log(`✅ Withdrawal approved: ${requestId}`);

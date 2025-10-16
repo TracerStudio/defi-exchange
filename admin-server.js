@@ -394,12 +394,24 @@ app.post('/api/update-withdrawal-status', (req, res) => {
   }
 });
 
+// Тестовий endpoint для перевірки зв'язку з ботом
+app.get('/api/bot-test', (req, res) => {
+  console.log('🤖 Bot test endpoint called');
+  res.json({ 
+    success: true, 
+    message: 'Bot connection test successful',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // API для оновлення балансу з бота (для webhook)
 app.post('/api/update-balance-from-bot', (req, res) => {
   try {
     const { userAddress, token, amount, operation } = req.body;
     
-    console.log('🤖 Bot balance update request:', { userAddress, token, amount, operation });
+    console.log('🤖 Bot balance update request received!');
+    console.log('📊 Request body:', req.body);
+    console.log('📊 Parsed data:', { userAddress, token, amount, operation });
     
     if (!userAddress || !token || !amount || !operation) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -442,15 +454,24 @@ app.post('/api/update-balance-from-bot', (req, res) => {
     fs.writeFileSync(balancesFile, JSON.stringify(userBalances, null, 2));
     
     console.log(`✅ Bot updated balance for ${userAddress}: ${token} ${currentBalance} → ${newBalance} (${operation} ${amount})`);
+    console.log(`📤 Sending response to bot:`, { 
+      success: true, 
+      userAddress, 
+      token, 
+      oldBalance: currentBalance, 
+      newBalance: newBalance, 
+      operation, 
+      amount
+    });
     
     res.json({ 
       success: true, 
       userAddress, 
       token, 
       oldBalance: currentBalance, 
-      newBalance: newBalance,
-      operation,
-      amount 
+      newBalance: newBalance, 
+      operation, 
+      amount
     });
     
   } catch (error) {
