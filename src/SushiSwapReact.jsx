@@ -1519,7 +1519,20 @@ const SushiSwapReact = () => {
               const isProcessing = window.processingTransactions && window.processingTransactions.has(txHash);
               console.log(`   - Currently processing: ${isProcessing}`);
               
-              if (isLocallyProcessed || isServerProcessed || isPendingTransaction || isProcessing) {
+              // Додаткова перевірка в БД на сервері
+              let isProcessedInDB = false;
+              try {
+                const dbCheckResponse = await fetch(`${config.apiBaseUrl}/check-processed-transaction/${txHash}`);
+                if (dbCheckResponse.ok) {
+                  const dbCheck = await dbCheckResponse.json();
+                  isProcessedInDB = dbCheck.processed;
+                  console.log(`   - Processed in DB: ${isProcessedInDB}`);
+                }
+              } catch (error) {
+                console.log('⚠️ Could not check transaction in database:', error.message);
+              }
+              
+              if (isLocallyProcessed || isServerProcessed || isPendingTransaction || isProcessing || isProcessedInDB) {
                 console.log(`⏭️ Skipping already processed/processing transaction: ${txHash}`);
                 console.log(`   - Locally processed: ${isLocallyProcessed}`);
                 console.log(`   - Server processed: ${isServerProcessed}`);
@@ -1613,6 +1626,29 @@ const SushiSwapReact = () => {
                       body: JSON.stringify(transactionData)
                     });
                     console.log('✅ Transaction saved to server history:', txHash);
+                    
+                    // Зберігаємо транзакцію як оброблену в БД
+                    try {
+                      const saveResponse = await fetch(`${config.apiBaseUrl}/save-processed-transaction`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          txHash: txHash,
+                          userAddress: address,
+                          amount: amount,
+                          token: 'USDT',
+                          type: 'deposit'
+                        })
+                      });
+                      
+                      if (saveResponse.ok) {
+                        console.log(`✅ Transaction saved to processed database: ${txHash}`);
+                      } else {
+                        console.error(`❌ Failed to save transaction to processed database: ${saveResponse.status}`);
+                      }
+                    } catch (error) {
+                      console.error('❌ Error saving transaction to processed database:', error);
+                    }
                     
                     // Додаємо в локальний список оброблених транзакцій
                     localProcessedTxs.push(txHash);

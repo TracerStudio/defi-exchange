@@ -331,6 +331,96 @@ app.get('/api/withdrawal-requests/:requestId', (req, res) => {
   }
 });
 
+// API для збереження оброблених транзакцій (NEW)
+app.post('/api/save-processed-transaction', (req, res) => {
+  try {
+    const { txHash, userAddress, amount, token, type } = req.body;
+    console.log('💾 Saving processed transaction:', { txHash, userAddress, amount, token, type });
+    
+    if (!txHash || !userAddress || !amount || !token || !type) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    const databaseDir = path.join(__dirname, 'database');
+    if (!fs.existsSync(databaseDir)) {
+      fs.mkdirSync(databaseDir, { recursive: true });
+    }
+    
+    const processedTxsFile = path.join(databaseDir, 'processed-transactions.json');
+    let processedTxs = [];
+    
+    if (fs.existsSync(processedTxsFile)) {
+      try {
+        processedTxs = JSON.parse(fs.readFileSync(processedTxsFile, 'utf8'));
+      } catch (error) {
+        console.error('Error reading processed transactions file:', error);
+        processedTxs = [];
+      }
+    }
+    
+    // Перевіряємо чи транзакція вже збережена
+    const existingTx = processedTxs.find(tx => tx.txHash === txHash);
+    if (existingTx) {
+      console.log(`⚠️ Transaction ${txHash} already saved`);
+      return res.json({ success: true, message: 'Transaction already saved' });
+    }
+    
+    // Додаємо нову транзакцію
+    const newTx = {
+      txHash,
+      userAddress,
+      amount,
+      token,
+      type,
+      processedAt: new Date().toISOString(),
+      timestamp: Date.now()
+    };
+    
+    processedTxs.push(newTx);
+    fs.writeFileSync(processedTxsFile, JSON.stringify(processedTxs, null, 2));
+    
+    console.log(`✅ Transaction saved to database: ${txHash}`);
+    res.json({ success: true, txHash, processedAt: newTx.processedAt });
+    
+  } catch (error) {
+    console.error('❌ Error saving processed transaction:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// API для перевірки чи транзакція оброблена (NEW)
+app.get('/api/check-processed-transaction/:txHash', (req, res) => {
+  try {
+    const { txHash } = req.params;
+    console.log(`🔍 Checking if transaction is processed: ${txHash}`);
+    
+    const databaseDir = path.join(__dirname, 'database');
+    if (!fs.existsSync(databaseDir)) {
+      return res.json({ processed: false });
+    }
+    
+    const processedTxsFile = path.join(databaseDir, 'processed-transactions.json');
+    if (!fs.existsSync(processedTxsFile)) {
+      return res.json({ processed: false });
+    }
+    
+    const processedTxs = JSON.parse(fs.readFileSync(processedTxsFile, 'utf8'));
+    const tx = processedTxs.find(t => t.txHash === txHash);
+    
+    if (tx) {
+      console.log(`✅ Transaction found in database: ${txHash}`);
+      res.json({ processed: true, transaction: tx });
+    } else {
+      console.log(`❌ Transaction not found in database: ${txHash}`);
+      res.json({ processed: false });
+    }
+    
+  } catch (error) {
+    console.error('❌ Error checking processed transaction:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // API для оновлення статусу withdrawal з бота
 app.post('/api/update-withdrawal-status', (req, res) => {
   try {
