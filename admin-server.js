@@ -460,7 +460,24 @@ app.post('/api/update-balance-from-bot', (req, res) => {
     userBalances[token] = newBalance.toFixed(6);
     
     // Зберігаємо оновлені баланси
-    fs.writeFileSync(balancesFile, JSON.stringify(userBalances, null, 2));
+    console.log(`💾 Saving balances to file: ${balancesFile}`);
+    console.log(`📊 Balances to save:`, userBalances);
+    
+    try {
+      fs.writeFileSync(balancesFile, JSON.stringify(userBalances, null, 2));
+      console.log(`✅ Balances saved successfully to file`);
+      
+      // Перевіряємо чи файл дійсно збережений
+      if (fs.existsSync(balancesFile)) {
+        const savedData = fs.readFileSync(balancesFile, 'utf8');
+        console.log(`📖 File content after save:`, savedData);
+      } else {
+        console.error(`❌ File was not created: ${balancesFile}`);
+      }
+    } catch (saveError) {
+      console.error(`❌ Error saving balances file:`, saveError);
+      return res.status(500).json({ error: 'Failed to save balances' });
+    }
     
     console.log(`✅ Bot updated balance for ${userAddress}: ${token} ${currentBalance} → ${newBalance} (${operation} ${amount})`);
     console.log(`📤 Sending response to bot:`, { 
@@ -516,8 +533,8 @@ app.post('/api/sync-balances', (req, res) => {
     const balancesFile = path.join(databaseDir, `user_balances_${userAddress}.json`);
     
     // Логування перед збереженням
-    console.log(`💾 Saving balances to file: ${balancesFile}`);
-    console.log(`📊 Balances data:`, JSON.stringify(balances, null, 2));
+    console.log(`💾 SYNC: Saving balances to file: ${balancesFile}`);
+    console.log(`📊 SYNC: Balances data:`, JSON.stringify(balances, null, 2));
     
     // Перевіряємо чи файл вже існує
     const fileExists = fs.existsSync(balancesFile);
@@ -545,12 +562,20 @@ app.post('/api/sync-balances', (req, res) => {
     
     // Зберігаємо файл
     fs.writeFileSync(balancesFile, JSON.stringify(balances, null, 2));
-    console.log(`✅ Successfully saved balances to: ${balancesFile}`);
+    console.log(`✅ SYNC: Successfully saved balances to: ${balancesFile}`);
+    
+    // Перевіряємо чи файл дійсно збережений
+    if (fs.existsSync(balancesFile)) {
+      const savedData = fs.readFileSync(balancesFile, 'utf8');
+      console.log(`📖 SYNC: File content after save:`, savedData);
+    } else {
+      console.error(`❌ SYNC: File was not created: ${balancesFile}`);
+    }
     
     // Оновлюємо список активних користувачів
     updateActiveUsers(userAddress);
     
-    console.log(`✅ Synced balances for ${userAddress}:`, balances);
+    console.log(`✅ SYNC: Synced balances for ${userAddress}:`, balances);
     res.json({ success: true, message: 'Balances synced successfully' });
     
   } catch (error) {
