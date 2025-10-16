@@ -646,7 +646,10 @@ const SushiSwapReact = () => {
     };
     
     // Check every 5 seconds for real-time updates
-    const interval = setInterval(checkApprovedWithdrawals, 5000); // Повернуто до 5 секунд
+    // Зменшуємо частоту polling на мобільних пристроях
+    const isMobile = window.innerWidth <= 768;
+    const withdrawalInterval = isMobile ? 10000 : 5000; // 10с на мобільних, 5с на ПК
+    const interval = setInterval(checkApprovedWithdrawals, withdrawalInterval);
     
     return () => clearInterval(interval);
   }, [address, approvedWithdrawals, clearBalanceAfterWithdrawal, updateUserBalance, getUserBalances, showNotification]);
@@ -681,7 +684,10 @@ const SushiSwapReact = () => {
     };
     
     // Update balances every 15 seconds (оптимізовано)
-    const balanceInterval = setInterval(updateBalances, 15000); // Повернуто до 15 секунд
+    // Зменшуємо частоту polling на мобільних пристроях
+    const isMobile = window.innerWidth <= 768;
+    const balanceUpdateInterval = isMobile ? 30000 : 15000; // 30с на мобільних, 15с на ПК
+    const balanceInterval = setInterval(updateBalances, balanceUpdateInterval);
     
     // Initial update
     updateBalances();
@@ -762,7 +768,10 @@ const SushiSwapReact = () => {
     };
 
     // Синхронізуємо кожні 30 секунд (частіше для кращої синхронізації)
-    const syncInterval = setInterval(syncAllLocalData, 30000); // Повернуто до 30 секунд
+    // Зменшуємо частоту polling на мобільних пристроях
+    const isMobile = window.innerWidth <= 768;
+    const syncUpdateInterval = isMobile ? 60000 : 30000; // 60с на мобільних, 30с на ПК
+    const syncInterval = setInterval(syncAllLocalData, syncUpdateInterval);
 
     return () => clearInterval(syncInterval);
   }, [address, getUserBalances, updateUserBalance]);
@@ -1788,19 +1797,22 @@ const SushiSwapReact = () => {
       
       loadPendingTransactions();
       
-      // Автоматична перевірка pending транзакцій кожні 15 секунд
+      // Автоматична перевірка pending транзакцій (оптимізовано для мобільних)
+      const isMobile = window.innerWidth <= 768;
+      const pendingInterval = isMobile ? 30000 : 15000; // 30с на мобільних, 15с на ПК
       const intervalId = setInterval(() => {
         if (address && walletProvider) {
       loadPendingTransactions();
         }
-      }, 15000); // Повернуто до 15 секунд
+      }, pendingInterval);
       
-      // Автоматичне сканування депозитів кожні 20 секунд (оптимізовано)
+      // Автоматичне сканування депозитів (оптимізовано для мобільних)
+      const depositScanInterval = isMobile ? 45000 : 20000; // 45с на мобільних, 20с на ПК
       const depositIntervalId = setInterval(() => {
         if (address && walletProvider) {
           scanBlockchainForDeposits();
         }
-      }, 20000); // Повернуто до 20 секунд
+      }, depositScanInterval);
       
       // Очищуємо інтервали при розмонтуванні
       return () => {

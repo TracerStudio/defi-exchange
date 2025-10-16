@@ -163,7 +163,24 @@ createAppKit({
   mobileOptimizations: {
     enableMobileWalletConnect: true,
     enableMobileQRCode: true,
-    enableMobileDeepLinking: true
+    enableMobileDeepLinking: true,
+    enableMobileModal: true,
+    enableMobileTouch: true,
+    enableMobileGestures: true
+  },
+  
+  // Мобільні налаштування для кращої роботи
+  mobileSettings: {
+    enableMobileWalletConnect: true,
+    enableMobileQRCode: true,
+    enableMobileDeepLinking: true,
+    enableMobileModal: true,
+    enableMobileTouch: true,
+    enableMobileGestures: true,
+    enableMobileKeyboard: true,
+    enableMobileScroll: true,
+    enableMobileZoom: false,
+    enableMobilePinch: false
   },
   
   // ДОДАТКОВІ НАЛАШТУВАННЯ ШРИФТІВ

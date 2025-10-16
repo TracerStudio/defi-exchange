@@ -3613,3 +3613,118 @@ w3m-modal textarea {
   }
 }
 
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  /* Зменшуємо розміри для мобільних */
+  .swap-container {
+    padding: 1rem;
+    margin: 0.5rem;
+  }
+  
+  .swap-box {
+    padding: 1rem;
+    border-radius: 16px;
+  }
+  
+  .token-input-container {
+    padding: 0.75rem;
+  }
+  
+  .token-input {
+    font-size: 1.1rem;
+  }
+  
+  .token-selector {
+    padding: 0.5rem;
+  }
+  
+  .swap-button {
+    height: 48px;
+    font-size: 1rem;
+    margin: 1rem 0;
+  }
+  
+  .balance-display {
+    font-size: 0.875rem;
+    margin: 0.5rem 0;
+  }
+  
+  /* Оптимізуємо модалки для мобільних */
+  .modal-overlay {
+    padding: 1rem;
+  }
+  
+  .modal-content {
+    width: 95%;
+    max-width: 400px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  
+  /* Покращуємо кнопки для мобільних */
+  .connect-wallet-button {
+    height: 48px;
+    font-size: 1rem;
+    padding: 0 1.5rem;
+  }
+  
+  /* Оптимізуємо баланси */
+  .balance-card {
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+  }
+  
+  .balance-amount {
+    font-size: 1.25rem;
+  }
+  
+  /* Покращуємо навігацію */
+  .nav-item {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+  }
+  
+  /* Оптимізуємо токени */
+  .token-list-item {
+    padding: 0.75rem;
+  }
+  
+  .token-symbol {
+    font-size: 1rem;
+  }
+  
+  .token-name {
+    font-size: 0.75rem;
+  }
+}
+
+/* Додаткові оптимізації для дуже маленьких екранів */
+@media (max-width: 480px) {
+  .swap-container {
+    padding: 0.75rem;
+    margin: 0.25rem;
+  }
+  
+  .swap-box {
+    padding: 0.75rem;
+  }
+  
+  .token-input {
+    font-size: 1rem;
+  }
+  
+  .swap-button {
+    height: 44px;
+    font-size: 0.9rem;
+  }
+  
+  .connect-wallet-button {
+    height: 44px;
+    font-size: 0.9rem;
+  }
+  
+  .balance-amount {
+    font-size: 1.1rem;
+  }
+}
+
