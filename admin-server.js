@@ -296,26 +296,37 @@ app.get('/api/withdrawal-requests/:requestId', (req, res) => {
     
     const databaseDir = path.join(__dirname, 'database');
     if (!fs.existsSync(databaseDir)) {
+      console.log(`❌ Database directory not found: ${databaseDir}`);
       return res.status(404).json({ error: 'Database not found' });
     }
     
     const withdrawalRequestsFile = path.join(databaseDir, 'pending-transactions.json');
+    console.log(`📁 Checking file: ${withdrawalRequestsFile}`);
+    
     if (!fs.existsSync(withdrawalRequestsFile)) {
+      console.log(`❌ Withdrawal requests file not found: ${withdrawalRequestsFile}`);
       return res.status(404).json({ error: 'No withdrawal requests found' });
     }
     
     const withdrawalRequests = JSON.parse(fs.readFileSync(withdrawalRequestsFile, 'utf8'));
+    console.log(`📋 Total withdrawal requests in file: ${withdrawalRequests.length}`);
+    console.log(`🔍 Looking for request ID: ${requestId}`);
+    console.log(`📋 Available request IDs:`, withdrawalRequests.map(req => req.id));
+    
     const request = withdrawalRequests.find(req => req.id === requestId);
     
     if (!request) {
+      console.log(`❌ Request not found: ${requestId}`);
       return res.status(404).json({ error: 'Request not found' });
     }
     
     console.log(`✅ Found withdrawal request: ${requestId}, status: ${request.status}`);
+    console.log(`📊 Request details:`, request);
     res.json(request);
     
   } catch (error) {
     console.error('❌ Error getting withdrawal request:', error);
+    console.error('❌ Error stack:', error.stack);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

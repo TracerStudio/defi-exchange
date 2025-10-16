@@ -586,6 +586,7 @@ const SushiSwapReact = () => {
               if (statusResponse.ok) {
                 const statusData = await statusResponse.json();
                 console.log(`📊 Withdrawal status for ${request.id}:`, statusData.status);
+                console.log(`📋 Full status data:`, statusData);
               
               if (statusData.status === 'approved') {
                 console.log(`✅ Withdrawal approved for ${request.amount} ${request.token}`);
