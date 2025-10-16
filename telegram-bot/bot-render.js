@@ -3,6 +3,16 @@ const express = require('express');
 const fetch = require('node-fetch');
 const app = express();
 
+// Перевіряємо версію Node.js
+console.log(`🔧 Node.js version: ${process.version}`);
+console.log(`🔧 Fetch available: ${typeof fetch}`);
+
+// Fallback для fetch якщо не працює
+if (typeof fetch === 'undefined') {
+  console.log(`❌ Fetch not available, using node-fetch`);
+  global.fetch = fetch;
+}
+
 // Telegram Bot Token
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '7769270215:AAH_R-Q14oxkKHU0a53xK4_evXWiQJBiO54';
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID || '-1002573326301';
@@ -120,6 +130,7 @@ const updateUserBalances = async (userAddress, token, amount) => {
   try {
     console.log(`🤖 Updating balance via API: ${userAddress}, ${token}, -${amount}`);
     console.log(`🌐 API URL: ${ADMIN_SERVER_URL}/api/update-balance-from-bot`);
+    console.log(`🔧 Fetch function available: ${typeof fetch}`);
     
     const requestBody = {
       userAddress: userAddress,
