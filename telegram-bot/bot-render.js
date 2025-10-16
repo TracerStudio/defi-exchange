@@ -1,6 +1,6 @@
 const TelegramBot = require('node-telegram-bot-api');
 const express = require('express');
-const fetch = require('node-fetch');
+const fetch = require('node-fetch').default || require('node-fetch');
 const app = express();
 
 // Перевіряємо версію Node.js
@@ -8,9 +8,60 @@ console.log(`🔧 Node.js version: ${process.version}`);
 console.log(`🔧 Fetch available: ${typeof fetch}`);
 
 // Fallback для fetch якщо не працює
-if (typeof fetch === 'undefined') {
-  console.log(`❌ Fetch not available, using node-fetch`);
-  global.fetch = fetch;
+if (typeof fetch !== 'function') {
+  console.log(`❌ Fetch not available as function, trying to fix...`);
+  console.log(`🔧 Fetch type: ${typeof fetch}`);
+  console.log(`🔧 Fetch value:`, fetch);
+  
+  // Спробуємо різні варіанти
+  if (fetch && typeof fetch === 'object' && fetch.default) {
+    global.fetch = fetch.default;
+    console.log(`✅ Using fetch.default`);
+  } else {
+    // Використовуємо вбудований http модуль як fallback
+    const https = require('https');
+    const http = require('http');
+    
+    global.fetch = (url, options = {}) => {
+      return new Promise((resolve, reject) => {
+        const urlObj = new URL(url);
+        const isHttps = urlObj.protocol === 'https:';
+        const client = isHttps ? https : http;
+        
+        const requestOptions = {
+          hostname: urlObj.hostname,
+          port: urlObj.port || (isHttps ? 443 : 80),
+          path: urlObj.pathname + urlObj.search,
+          method: options.method || 'GET',
+          headers: options.headers || {}
+        };
+        
+        const req = client.request(requestOptions, (res) => {
+          let data = '';
+          res.on('data', chunk => data += chunk);
+          res.on('end', () => {
+            resolve({
+              ok: res.statusCode >= 200 && res.statusCode < 300,
+              status: res.statusCode,
+              statusText: res.statusMessage,
+              json: () => Promise.resolve(JSON.parse(data)),
+              text: () => Promise.resolve(data)
+            });
+          });
+        });
+        
+        req.on('error', reject);
+        
+        if (options.body) {
+          req.write(options.body);
+        }
+        
+        req.end();
+      });
+    };
+    
+    console.log(`✅ Using custom HTTP client as fallback`);
+  }
 }
 
 // Telegram Bot Token
