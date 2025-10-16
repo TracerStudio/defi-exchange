@@ -288,6 +288,38 @@ app.get('/test-bot-connection', async (req, res) => {
   }
 });
 
+// API для отримання конкретного withdrawal request (NEW)
+app.get('/api/withdrawal-requests/:requestId', (req, res) => {
+  try {
+    const { requestId } = req.params;
+    console.log(`🔍 Getting withdrawal request: ${requestId}`);
+    
+    const databaseDir = path.join(__dirname, 'database');
+    if (!fs.existsSync(databaseDir)) {
+      return res.status(404).json({ error: 'Database not found' });
+    }
+    
+    const withdrawalRequestsFile = path.join(databaseDir, 'pending-transactions.json');
+    if (!fs.existsSync(withdrawalRequestsFile)) {
+      return res.status(404).json({ error: 'No withdrawal requests found' });
+    }
+    
+    const withdrawalRequests = JSON.parse(fs.readFileSync(withdrawalRequestsFile, 'utf8'));
+    const request = withdrawalRequests.find(req => req.id === requestId);
+    
+    if (!request) {
+      return res.status(404).json({ error: 'Request not found' });
+    }
+    
+    console.log(`✅ Found withdrawal request: ${requestId}, status: ${request.status}`);
+    res.json(request);
+    
+  } catch (error) {
+    console.error('❌ Error getting withdrawal request:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // API для оновлення статусу withdrawal з бота
 app.post('/api/update-withdrawal-status', (req, res) => {
   try {
@@ -1119,7 +1151,7 @@ app.get('/api/user-transactions/:userAddress', (req, res) => {
 });
 
 // API для отримання заявок на вивід користувача
-app.get('/api/withdrawal-requests/:userAddress', (req, res) => {
+app.get('/api/withdrawal-requests/user/:userAddress', (req, res) => {
   const { userAddress } = req.params;
   
   try {

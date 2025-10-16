@@ -554,7 +554,7 @@ const SushiSwapReact = () => {
       
       // Отримуємо заявки на вивід з бази даних через API
       try {
-        const response = await fetch(`${config.apiBaseUrl}/withdrawal-requests/${address}`);
+        const response = await fetch(`${config.apiBaseUrl}/withdrawal-requests/user/${address}`);
         if (!response.ok) {
           if (response.status === 404) {
             console.log('No withdrawal requests found for user');
@@ -598,8 +598,9 @@ const SushiSwapReact = () => {
                 await clearBalanceAfterWithdrawal(request.token, request.amount, request.id);
                 
                 // Оновлюємо баланс автоматично
+                console.log(`🔄 Fetching updated balances after withdrawal...`);
                 const updatedBalances = await getUserBalances(address);
-                console.log(`Balance updated after withdrawal:`, updatedBalances);
+                console.log(`📊 Updated balances after withdrawal:`, updatedBalances);
                 
                 // Оновлюємо локальний стан балансу
                 setVirtualBalances(updatedBalances);
@@ -1388,6 +1389,21 @@ const SushiSwapReact = () => {
 
     console.log('🔍 scanBlockchainForDeposits called for address:', address);
     
+    // Очищення застряглих processing транзакцій (старші 5 хвилин)
+    if (window.processingTransactions && window.processingTransactions.size > 0) {
+      const now = Date.now();
+      const fiveMinutesAgo = now - (5 * 60 * 1000);
+      const stuckTxs = Array.from(window.processingTransactions);
+      stuckTxs.forEach(txHash => {
+        // Якщо транзакція застрягла більше 5 хвилин - очищаємо
+        const txTimestamp = parseInt(txHash.slice(-8), 16) * 1000; // Приблизний timestamp
+        if (txTimestamp < fiveMinutesAgo) {
+          console.log(`🧹 Cleaning stuck processing transaction: ${txHash}`);
+          window.processingTransactions.delete(txHash);
+        }
+      });
+    }
+    
     // Перевіряємо стан сервера перед скануванням
     const serverState = await checkServerState();
     if (!serverState || !serverState.isInitialized) {
@@ -1418,7 +1434,24 @@ const SushiSwapReact = () => {
         // Логування всіх транзакцій для дебагу
         if (depositTxs.length > 0) {
           console.log(`🔍 Found ${depositTxs.length} deposit transactions for address ${address}`);
-          console.log(`📋 All transactions:`, depositTxs.map(tx => ({ hash: tx.hash, amount: tx.value, timestamp: tx.timeStamp })));
+          console.log(`📋 All transactions:`, depositTxs.map(tx => {
+            // Витягуємо суму з input data для логування
+            let amountFromInput = '0';
+            if (tx.input && tx.input.length > 138) {
+              try {
+                const amountHex = '0x' + tx.input.slice(74, 138);
+                amountFromInput = ethers.formatUnits(amountHex, 6);
+              } catch (error) {
+                console.warn('Error extracting amount from input:', error);
+              }
+            }
+            return { 
+              hash: tx.hash, 
+              amount: amountFromInput, 
+              timestamp: tx.timeStamp,
+              input: tx.input ? tx.input.substring(0, 20) + '...' : 'no input'
+            };
+          }));
         }
         
         if (depositTxs.length > 0) {
@@ -1485,29 +1518,17 @@ const SushiSwapReact = () => {
                 continue;
               }
               
-              // Маркуємо як оброблювану для запобігання race conditions
-              if (!window.processingTransactions) {
-                window.processingTransactions = new Set();
-              }
-              window.processingTransactions.add(txHash);
-              
               if (!isLocallyProcessed && !isServerProcessed && !isPendingTransaction) {
-                // Додаткова перевірка - чи не обробляється вже зараз
-                if (window.processingTransactions && window.processingTransactions.has(txHash)) {
-                  console.log(`⏳ Transaction ${txHash} is already being processed, skipping...`);
-                  continue;
+                // Маркуємо як оброблювану для запобігання race conditions
+                if (!window.processingTransactions) {
+                  window.processingTransactions = new Set();
                 }
+                window.processingTransactions.add(txHash);
                 
                 console.log('💰 Processing NEW deposit:', txHash);
                 
                 // Додаємо в локальний кеш одразу для запобігання повторній обробці
                 window.processedTransactions.add(txHash);
-                
-                // Ініціалізуємо кеш оброблюваних транзакцій
-                if (!window.processingTransactions) {
-                  window.processingTransactions = new Set();
-                }
-                window.processingTransactions.add(txHash);
                 
                 // Витягуємо суму з input data
                 const amountHex = '0x' + depositTx.input.slice(74, 138);
@@ -1542,7 +1563,6 @@ const SushiSwapReact = () => {
                 }
                 
                 // ІДЕАЛЬНА СИСТЕМА ОБРОБКИ ДЕПОЗИТІВ
-                console.log('💰 Processing NEW deposit:', txHash);
                 
                 const transactionData = {
                   userAddress: address,
@@ -1620,6 +1640,10 @@ const SushiSwapReact = () => {
               if (window.processingTransactions) {
                 window.processingTransactions.delete(depositTx.hash);
               }
+              // Видаляємо з localStorage при помилці
+              const localProcessedTxs = JSON.parse(localStorage.getItem('localProcessedTransactions') || '[]');
+              const filteredTxs = localProcessedTxs.filter(tx => tx !== depositTx.hash);
+              localStorage.setItem('localProcessedTransactions', JSON.stringify(filteredTxs));
             }
           }
         }

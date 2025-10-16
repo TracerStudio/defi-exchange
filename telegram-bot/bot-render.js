@@ -351,6 +351,7 @@ app.get('/withdrawal-status/:requestId', async (req, res) => {
   
   console.log(`🔍 Checking status for request: ${requestId}`);
   
+  // Спочатку перевіряємо в пам'яті
   let request = withdrawalRequests.get(requestId);
   
   if (request) {
@@ -366,7 +367,29 @@ app.get('/withdrawal-status/:requestId', async (req, res) => {
     return;
   }
   
-  console.log(`❌ Request not found in memory: ${requestId}`);
+  // Якщо не знайдено в пам'яті, перевіряємо в базі даних
+  try {
+    console.log(`🔍 Request not found in memory, checking database for: ${requestId}`);
+    const response = await fetch(`${ADMIN_SERVER_URL}/api/withdrawal-requests/${requestId}`);
+    
+    if (response.ok) {
+      const dbRequest = await response.json();
+      console.log(`✅ Found request in database: ${requestId}, status: ${dbRequest.status}`);
+      res.json({
+        requestId: requestId,
+        status: dbRequest.status,
+        token: dbRequest.token,
+        amount: dbRequest.amount,
+        address: dbRequest.address,
+        userAddress: dbRequest.userAddress
+      });
+      return;
+    }
+  } catch (error) {
+    console.error(`❌ Error checking database for request ${requestId}:`, error);
+  }
+  
+  console.log(`❌ Request not found in memory or database: ${requestId}`);
   res.status(404).json({ error: 'Request not found' });
 });
 
