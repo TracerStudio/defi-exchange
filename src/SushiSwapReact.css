@@ -3613,292 +3613,134 @@ w3m-modal textarea {
   }
 }
 
-/* Mobile Optimizations - ПОВНА ОПТИМІЗАЦІЯ */
+/* Mobile Optimizations - НОРМАЛЬНІ РОЗМІРИ */
 @media (max-width: 768px) {
-  /* ЗМЕНШУЄМО ВСЕ ДЛЯ МОБІЛЬНИХ */
-  
   /* Основні контейнери */
   .swap-container {
-    padding: 0.5rem !important;
-    margin: 0.25rem !important;
-    max-width: 100% !important;
+    padding: 1rem;
+    margin: 0.5rem;
   }
   
   .swap-box {
-    padding: 0.75rem !important;
-    border-radius: 12px !important;
-    margin: 0.25rem 0 !important;
+    padding: 1rem;
+    border-radius: 16px;
   }
   
-  /* Token input контейнери */
   .token-input-container {
-    padding: 0.5rem !important;
-    margin: 0.25rem 0 !important;
+    padding: 0.75rem;
   }
   
   .token-input {
-    font-size: 1rem !important;
-    padding: 0.5rem !important;
-    height: 40px !important;
+    font-size: 1.1rem;
   }
   
   .token-selector {
-    padding: 0.375rem !important;
-    height: 40px !important;
-    font-size: 0.875rem !important;
+    padding: 0.5rem;
   }
   
-  /* Кнопки */
   .swap-button {
-    height: 40px !important;
-    font-size: 0.875rem !important;
-    margin: 0.5rem 0 !important;
-    padding: 0 1rem !important;
+    height: 48px;
+    font-size: 1rem;
+    margin: 1rem 0;
   }
   
-  .connect-wallet-button {
-    height: 40px !important;
-    font-size: 0.875rem !important;
-    padding: 0 1rem !important;
-  }
-  
-  /* Баланси */
   .balance-display {
-    font-size: 0.75rem !important;
-    margin: 0.25rem 0 !important;
+    font-size: 0.875rem;
+    margin: 0.5rem 0;
   }
   
-  .balance-card {
-    padding: 0.5rem !important;
-    margin: 0.25rem 0 !important;
-  }
-  
-  .balance-amount {
-    font-size: 1rem !important;
-  }
-  
-  /* Модалки */
+  /* Оптимізуємо модалки для мобільних */
   .modal-overlay {
-    padding: 0.5rem !important;
+    padding: 1rem;
   }
   
   .modal-content {
-    width: 98% !important;
-    max-width: 100% !important;
-    max-height: 90vh !important;
-    padding: 0.75rem !important;
-    border-radius: 12px !important;
+    width: 95%;
+    max-width: 400px;
+    max-height: 80vh;
+    overflow-y: auto;
   }
   
-  /* Навігація */
+  /* Покращуємо кнопки для мобільних */
+  .connect-wallet-button {
+    height: 48px;
+    font-size: 1rem;
+    padding: 0 1.5rem;
+  }
+  
+  /* Оптимізуємо баланси */
+  .balance-card {
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+  }
+  
+  .balance-amount {
+    font-size: 1.25rem;
+  }
+  
+  /* Покращуємо навігацію */
   .nav-item {
-    padding: 0.5rem 0.75rem !important;
-    font-size: 0.75rem !important;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
   }
   
-  /* Токени */
+  /* Оптимізуємо токени */
   .token-list-item {
-    padding: 0.5rem !important;
-    margin: 0.125rem 0 !important;
+    padding: 0.75rem;
   }
   
   .token-symbol {
-    font-size: 0.875rem !important;
+    font-size: 1rem;
   }
   
   .token-name {
-    font-size: 0.625rem !important;
-  }
-  
-  /* Заголовки */
-  h1, h2, h3, h4, h5, h6 {
-    margin: 0.25rem 0 !important;
-    font-size: 0.875rem !important;
-  }
-  
-  /* Параграфи */
-  p {
-    margin: 0.125rem 0 !important;
-    font-size: 0.75rem !important;
-  }
-  
-  /* Відступи загалом */
-  * {
-    margin: 0.125rem 0 !important;
-    padding: 0.25rem !important;
-  }
-  
-  /* Винятки для важливих елементів */
-  .swap-button, .connect-wallet-button {
-    margin: 0.5rem 0 !important;
-    padding: 0.5rem 1rem !important;
-  }
-  
-  .token-input-container {
-    margin: 0.25rem 0 !important;
-    padding: 0.5rem !important;
+    font-size: 0.75rem;
   }
 }
 
 /* Додаткові оптимізації для дуже маленьких екранів */
 @media (max-width: 480px) {
-  /* ЩЕ БІЛЬШЕ ЗМЕНШУЄМО ВСЕ */
-  
   .swap-container {
-    padding: 0.25rem !important;
-    margin: 0.125rem !important;
+    padding: 0.75rem;
+    margin: 0.25rem;
   }
   
   .swap-box {
-    padding: 0.5rem !important;
-    border-radius: 8px !important;
-  }
-  
-  .token-input-container {
-    padding: 0.25rem !important;
-    margin: 0.125rem 0 !important;
+    padding: 0.75rem;
   }
   
   .token-input {
-    font-size: 0.875rem !important;
-    padding: 0.375rem !important;
-    height: 36px !important;
-  }
-  
-  .token-selector {
-    padding: 0.25rem !important;
-    height: 36px !important;
-    font-size: 0.75rem !important;
+    font-size: 1rem;
   }
   
   .swap-button {
-    height: 36px !important;
-    font-size: 0.75rem !important;
-    margin: 0.375rem 0 !important;
-    padding: 0 0.75rem !important;
+    height: 44px;
+    font-size: 0.9rem;
   }
   
   .connect-wallet-button {
-    height: 36px !important;
-    font-size: 0.75rem !important;
-    padding: 0 0.75rem !important;
-  }
-  
-  .balance-display {
-    font-size: 0.625rem !important;
-    margin: 0.125rem 0 !important;
-  }
-  
-  .balance-card {
-    padding: 0.375rem !important;
-    margin: 0.125rem 0 !important;
+    height: 44px;
+    font-size: 0.9rem;
   }
   
   .balance-amount {
-    font-size: 0.875rem !important;
-  }
-  
-  .modal-content {
-    width: 99% !important;
-    padding: 0.5rem !important;
-    border-radius: 8px !important;
-  }
-  
-  .nav-item {
-    padding: 0.375rem 0.5rem !important;
-    font-size: 0.625rem !important;
-  }
-  
-  .token-list-item {
-    padding: 0.375rem !important;
-    margin: 0.0625rem 0 !important;
-  }
-  
-  .token-symbol {
-    font-size: 0.75rem !important;
-  }
-  
-  .token-name {
-    font-size: 0.5rem !important;
-  }
-  
-  h1, h2, h3, h4, h5, h6 {
-    margin: 0.125rem 0 !important;
-    font-size: 0.75rem !important;
-  }
-  
-  p {
-    margin: 0.0625rem 0 !important;
-    font-size: 0.625rem !important;
-  }
-  
-  /* Мінімальні відступи */
-  * {
-    margin: 0.0625rem 0 !important;
-    padding: 0.125rem !important;
-  }
-  
-  .swap-button, .connect-wallet-button {
-    margin: 0.375rem 0 !important;
-    padding: 0.375rem 0.75rem !important;
-  }
-  
-  .token-input-container {
-    margin: 0.125rem 0 !important;
-    padding: 0.25rem !important;
+    font-size: 1.1rem;
   }
 }
 
 /* Додаткові оптимізації продуктивності для мобільних */
 @media (max-width: 768px) {
-  /* Відключаємо анімації на мобільних для кращої продуктивності */
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-  
   /* Оптимізуємо скролл */
   .modal-content, .token-list, .swap-container {
-    -webkit-overflow-scrolling: touch !important;
-    scroll-behavior: auto !important;
-  }
-  
-  /* Зменшуємо тіні для кращої продуктивності */
-  .swap-box, .modal-content, .balance-card {
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: auto;
   }
   
   /* Оптимізуємо зображення */
   img {
-    max-width: 100% !important;
-    height: auto !important;
-    image-rendering: -webkit-optimize-contrast !important;
-  }
-  
-  /* Мінімізуємо reflow/repaint */
-  .swap-container, .swap-box, .token-input-container {
-    contain: layout style paint !important;
-  }
-}
-
-/* Додаткові оптимізації для дуже маленьких екранів */
-@media (max-width: 480px) {
-  /* Ще більше оптимізацій */
-  *, *::before, *::after {
-    animation: none !important;
-    transition: none !important;
-  }
-  
-  /* Мінімальні тіні */
-  .swap-box, .modal-content, .balance-card {
-    box-shadow: none !important;
-    border: 1px solid rgba(255,255,255,0.1) !important;
-  }
-  
-  /* Оптимізуємо контейнери */
-  .swap-container, .swap-box, .token-input-container {
-    contain: strict !important;
+    max-width: 100%;
+    height: auto;
+    image-rendering: -webkit-optimize-contrast;
   }
 }
 
