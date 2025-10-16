@@ -16,10 +16,22 @@ console.log(`🤖 Telegram Bot initialized for Render`);
 console.log(`📱 Admin Chat ID: ${ADMIN_CHAT_ID}`);
 console.log(`🔑 Bot Token: ${BOT_TOKEN.substring(0, 10)}...`);
 console.log(`🌐 Admin Server URL: ${ADMIN_SERVER_URL}`);
+console.log(`🚀 Bot is ready to receive webhooks!`);
 
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Test endpoint
+app.get('/test', (req, res) => {
+  console.log('🧪 Bot test endpoint called');
+  res.json({ 
+    success: true, 
+    message: 'Bot is running',
+    timestamp: new Date().toISOString(),
+    adminServerUrl: ADMIN_SERVER_URL
+  });
+});
 
 // CORS
 app.use((req, res, next) => {
@@ -107,6 +119,8 @@ app.post(`/webhook/${BOT_TOKEN}`, (req, res) => {
     from: req.body.message?.from?.username || req.body.callback_query?.from?.username || 'unknown',
     data: req.body.callback_query?.data || 'no data'
   });
+  
+  console.log(`📋 Full webhook body:`, JSON.stringify(req.body, null, 2));
   
   bot.processUpdate(req.body);
   res.sendStatus(200);

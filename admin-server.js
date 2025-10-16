@@ -218,7 +218,16 @@ app.get('/admin', (req, res) => {
 
 // Serve the alex admin panel
 app.get('/alex', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+  const adminPath = path.join(__dirname, 'public', 'admin.html');
+  console.log(`🔧 Admin panel requested, serving from: ${adminPath}`);
+  
+  if (fs.existsSync(adminPath)) {
+    console.log(`✅ Admin file exists, serving...`);
+    res.sendFile(adminPath);
+  } else {
+    console.log(`❌ Admin file not found at: ${adminPath}`);
+    res.status(404).send('Admin panel not found');
+  }
 });
 
 // Serve the main app
