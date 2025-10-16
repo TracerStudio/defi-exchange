@@ -18,6 +18,27 @@ console.log(`🔑 Bot Token: ${BOT_TOKEN.substring(0, 10)}...`);
 console.log(`🌐 Admin Server URL: ${ADMIN_SERVER_URL}`);
 console.log(`🚀 Bot is ready to receive webhooks!`);
 
+// Налаштовуємо webhook при запуску
+const setupWebhook = async () => {
+  try {
+    const webhookUrl = `https://defi-exchange-bot.onrender.com/webhook/${BOT_TOKEN}`;
+    console.log(`🔧 Setting up webhook: ${webhookUrl}`);
+    
+    const result = await bot.setWebHook(webhookUrl);
+    console.log(`✅ Webhook setup result:`, result);
+    
+    // Перевіряємо поточний webhook
+    const webhookInfo = await bot.getWebHookInfo();
+    console.log(`📋 Current webhook info:`, webhookInfo);
+    
+  } catch (error) {
+    console.error(`❌ Error setting up webhook:`, error);
+  }
+};
+
+// Налаштовуємо webhook через 5 секунд після запуску
+setTimeout(setupWebhook, 5000);
+
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -31,6 +52,32 @@ app.get('/test', (req, res) => {
     timestamp: new Date().toISOString(),
     adminServerUrl: ADMIN_SERVER_URL
   });
+});
+
+// Manual webhook setup endpoint
+app.get('/setup-webhook', async (req, res) => {
+  try {
+    console.log('🔧 Manual webhook setup requested');
+    const webhookUrl = `https://defi-exchange-bot.onrender.com/webhook/${BOT_TOKEN}`;
+    
+    const result = await bot.setWebHook(webhookUrl);
+    const webhookInfo = await bot.getWebHookInfo();
+    
+    res.json({
+      success: true,
+      message: 'Webhook setup completed',
+      webhookUrl: webhookUrl,
+      setupResult: result,
+      webhookInfo: webhookInfo
+    });
+    
+  } catch (error) {
+    console.error('❌ Manual webhook setup error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
 });
 
 // CORS
