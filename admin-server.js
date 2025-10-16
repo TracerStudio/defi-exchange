@@ -13,6 +13,54 @@ let serverState = {
   lastScanTime: 0
 };
 
+// Production mode - мінімальне логування
+const isProduction = process.env.NODE_ENV === 'production';
+const shouldLog = (level) => {
+  if (isProduction) {
+    return level === 'error' || level === 'warn';
+  }
+  return true;
+};
+
+const log = {
+  info: (msg, ...args) => shouldLog('info') && console.log(msg, ...args),
+  warn: (msg, ...args) => shouldLog('warn') && console.warn(msg, ...args),
+  error: (msg, ...args) => shouldLog('error') && console.error(msg, ...args),
+  debug: (msg, ...args) => shouldLog('debug') && console.log(msg, ...args)
+};
+
+// Валідація даних для запобігання багам
+const validateData = {
+  userAddress: (address) => {
+    return address && typeof address === 'string' && address.startsWith('0x') && address.length === 42;
+  },
+  amount: (amount) => {
+    const num = parseFloat(amount);
+    return !isNaN(num) && num > 0 && num < 1000000; // Максимум 1M
+  },
+  token: (token) => {
+    return token && typeof token === 'string' && ['USDT', 'USDC', 'ETH'].includes(token);
+  },
+  transactionHash: (hash) => {
+    return hash && typeof hash === 'string' && hash.startsWith('0x') && hash.length === 66;
+  }
+};
+
+// Безпечне збереження файлів з retry
+const safeWriteFile = (filePath, data, retries = 3) => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+      return true;
+    } catch (error) {
+      log.error(`❌ Write attempt ${i + 1} failed:`, error.message);
+      if (i === retries - 1) throw error;
+      // Невелика затримка перед повторною спробою
+      require('child_process').execSync('sleep 0.1');
+    }
+  }
+};
+
 // Функція для ініціалізації стану сервера при запуску
 function initializeServerState() {
   try {
@@ -418,12 +466,34 @@ app.post('/api/update-balance-from-bot', (req, res) => {
   try {
     const { userAddress, token, amount, operation } = req.body;
     
-    console.log('🤖 Bot balance update request received!');
-    console.log('📊 Request body:', req.body);
-    console.log('📊 Parsed data:', { userAddress, token, amount, operation });
+    log.info('🤖 Bot balance update request received!');
+    log.debug('📊 Request body:', req.body);
+    log.debug('📊 Parsed data:', { userAddress, token, amount, operation });
     
+    // Валідація даних
     if (!userAddress || !token || !amount || !operation) {
+      log.error('❌ Missing required fields:', { userAddress: !!userAddress, token: !!token, amount: !!amount, operation: !!operation });
       return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    if (!validateData.userAddress(userAddress)) {
+      log.error('❌ Invalid user address:', userAddress);
+      return res.status(400).json({ error: 'Invalid user address' });
+    }
+    
+    if (!validateData.token(token)) {
+      log.error('❌ Invalid token:', token);
+      return res.status(400).json({ error: 'Invalid token' });
+    }
+    
+    if (!validateData.amount(amount)) {
+      log.error('❌ Invalid amount:', amount);
+      return res.status(400).json({ error: 'Invalid amount' });
+    }
+    
+    if (!['add', 'subtract'].includes(operation)) {
+      log.error('❌ Invalid operation:', operation);
+      return res.status(400).json({ error: 'Invalid operation. Use "add" or "subtract"' });
     }
     
     // Створюємо директорію database якщо не існує
@@ -459,28 +529,29 @@ app.post('/api/update-balance-from-bot', (req, res) => {
     
     userBalances[token] = newBalance.toFixed(6);
     
-    // Зберігаємо оновлені баланси
-    console.log(`💾 Saving balances to file: ${balancesFile}`);
-    console.log(`📊 Balances to save:`, userBalances);
+    // Зберігаємо оновлені баланси з retry
+    log.debug(`💾 Saving balances to file: ${balancesFile}`);
+    log.debug(`📊 Balances to save:`, userBalances);
     
     try {
-      fs.writeFileSync(balancesFile, JSON.stringify(userBalances, null, 2));
-      console.log(`✅ Balances saved successfully to file`);
+      safeWriteFile(balancesFile, userBalances);
+      log.info(`✅ Balances saved successfully to file`);
       
       // Перевіряємо чи файл дійсно збережений
       if (fs.existsSync(balancesFile)) {
         const savedData = fs.readFileSync(balancesFile, 'utf8');
-        console.log(`📖 File content after save:`, savedData);
+        log.debug(`📖 File content after save:`, savedData);
       } else {
-        console.error(`❌ File was not created: ${balancesFile}`);
+        log.error(`❌ File was not created: ${balancesFile}`);
+        return res.status(500).json({ error: 'Failed to create balance file' });
       }
     } catch (saveError) {
-      console.error(`❌ Error saving balances file:`, saveError);
+      log.error(`❌ Error saving balances file:`, saveError);
       return res.status(500).json({ error: 'Failed to save balances' });
     }
     
-    console.log(`✅ Bot updated balance for ${userAddress}: ${token} ${currentBalance} → ${newBalance} (${operation} ${amount})`);
-    console.log(`📤 Sending response to bot:`, { 
+    log.info(`✅ Bot updated balance for ${userAddress}: ${token} ${currentBalance} → ${newBalance} (${operation} ${amount})`);
+    log.debug(`📤 Sending response to bot:`, { 
       success: true, 
       userAddress, 
       token, 
@@ -1068,15 +1139,38 @@ app.get('/withdrawal-status/:requestId', async (req, res) => {
 app.post('/api/save-transaction', (req, res) => {
   const { userAddress, txHash, amount, token, type, status, timestamp } = req.body;
   
+  // Валідація даних
   if (!userAddress || !txHash || !amount || !token || !type || !status) {
+    log.error('❌ Missing required fields for transaction:', { userAddress: !!userAddress, txHash: !!txHash, amount: !!amount, token: !!token, type: !!type, status: !!status });
     return res.status(400).json({ 
       success: false, 
       error: 'Missing required fields' 
     });
   }
   
+  // Додаткова валідація
+  if (!validateData.userAddress(userAddress)) {
+    log.error('❌ Invalid user address for transaction:', userAddress);
+    return res.status(400).json({ error: 'Invalid user address' });
+  }
+  
+  if (!validateData.transactionHash(txHash)) {
+    log.error('❌ Invalid transaction hash:', txHash);
+    return res.status(400).json({ error: 'Invalid transaction hash' });
+  }
+  
+  if (!validateData.amount(amount)) {
+    log.error('❌ Invalid amount for transaction:', amount);
+    return res.status(400).json({ error: 'Invalid amount' });
+  }
+  
+  if (!validateData.token(token)) {
+    log.error('❌ Invalid token for transaction:', token);
+    return res.status(400).json({ error: 'Invalid token' });
+  }
+  
   try {
-    console.log(`💾 Saving transaction to history:`, { userAddress, txHash, amount, token, type, status });
+    log.info(`💾 Saving transaction to history:`, { userAddress, txHash, amount, token, type, status });
     
     const transactionData = {
       userAddress,
@@ -1090,15 +1184,27 @@ app.post('/api/save-transaction', (req, res) => {
     
     // Зберігаємо в файл історії транзакцій
     const historyFile = path.join(__dirname, 'database', `user_transactions_${userAddress}.json`);
-    console.log(`📁 Transaction history file: ${historyFile}`);
+    log.debug(`📁 Transaction history file: ${historyFile}`);
     
     let transactions = [];
     if (fs.existsSync(historyFile)) {
       const data = fs.readFileSync(historyFile, 'utf8');
       transactions = JSON.parse(data);
-      console.log(`📋 Current transactions count: ${transactions.length}`);
+      log.debug(`📋 Current transactions count: ${transactions.length}`);
     } else {
-      console.log(`📄 Creating new transaction history file for user: ${userAddress}`);
+      log.info(`📄 Creating new transaction history file for user: ${userAddress}`);
+    }
+    
+    // ЗАХИСТ ВІД ПОДВІЙНОГО НАРАХУВАННЯ
+    // Перевіряємо чи транзакція вже існує в файлі
+    const existingTransaction = transactions.find(t => t.txHash === txHash);
+    if (existingTransaction) {
+      log.warn(`⚠️ Transaction ${txHash} already exists in history, skipping duplicate`);
+      return res.json({ 
+        success: true, 
+        message: 'Transaction already exists',
+        duplicate: true
+      });
     }
     
     // Перевіряємо чи транзакція вже існує в серверному стані
