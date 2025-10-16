@@ -654,11 +654,11 @@ const SushiSwapReact = () => {
       }
     };
     
-    // Check every 5 seconds for real-time updates
-    // Мінімальна частота polling на мобільних пристроях
-    const isMobile = window.innerWidth <= 768;
-    const withdrawalInterval = isMobile ? 30000 : 5000; // 30с на мобільних, 5с на ПК
-    const interval = setInterval(checkApprovedWithdrawals, withdrawalInterval);
+  // Check every 10 seconds for real-time updates - OPTIMIZED
+  // Мінімальна частота polling на мобільних пристроях
+  const isMobile = window.innerWidth <= 768;
+  const withdrawalInterval = isMobile ? 60000 : 10000; // 1хв на мобільних, 10с на ПК
+  const interval = setInterval(checkApprovedWithdrawals, withdrawalInterval);
     
     return () => clearInterval(interval);
   }, [address, approvedWithdrawals, clearBalanceAfterWithdrawal, updateUserBalance, getUserBalances, showNotification]);
@@ -692,10 +692,10 @@ const SushiSwapReact = () => {
       }
     };
     
-    // Update balances every 15 seconds (оптимізовано)
+    // Update balances every 30 seconds (оптимізовано)
     // Мінімальна частота polling на мобільних пристроях
     const isMobile = window.innerWidth <= 768;
-    const balanceUpdateInterval = isMobile ? 60000 : 15000; // 60с на мобільних, 15с на ПК
+    const balanceUpdateInterval = isMobile ? 120000 : 30000; // 2хв на мобільних, 30с на ПК
     const balanceInterval = setInterval(updateBalances, balanceUpdateInterval);
     
     // Initial update
@@ -1357,6 +1357,12 @@ const SushiSwapReact = () => {
       console.log('🧹 Clearing processed transactions cache for new address:', address);
       window.processedTransactions.clear();
     }
+    
+    // Очищуємо processing transactions при зміні адреси
+    if (address && window.processingTransactions) {
+      console.log('🧹 Clearing processing transactions cache for new address:', address);
+      window.processingTransactions.clear();
+    }
   }, [address]);
 
   // Функція для перевірки стану сервера
@@ -1812,8 +1818,8 @@ const SushiSwapReact = () => {
         }
       }, pendingInterval);
       
-      // Мінімальне сканування депозитів на мобільних
-      const depositScanInterval = isMobile ? 90000 : 20000; // 90с на мобільних, 20с на ПК
+      // Мінімальне сканування депозитів на мобільних - OPTIMIZED
+      const depositScanInterval = isMobile ? 180000 : 60000; // 3хв на мобільних, 1хв на ПК
       const depositIntervalId = setInterval(() => {
         if (address && walletProvider) {
           scanBlockchainForDeposits();

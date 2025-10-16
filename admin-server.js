@@ -264,16 +264,16 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-// Serve the alex admin panel
+// Serve the alex admin panel - React app
 app.get('/alex', (req, res) => {
-  const adminPath = path.join(__dirname, 'public', 'admin.html');
-  console.log(`🔧 Admin panel requested, serving from: ${adminPath}`);
+  const buildPath = path.join(__dirname, 'build', 'index.html');
+  log.info(`🔧 Admin panel requested, serving React app from: ${buildPath}`);
   
-  if (fs.existsSync(adminPath)) {
-    console.log(`✅ Admin file exists, serving...`);
-    res.sendFile(adminPath);
+  if (fs.existsSync(buildPath)) {
+    log.info(`✅ React app exists, serving...`);
+    res.sendFile(buildPath);
   } else {
-    console.log(`❌ Admin file not found at: ${adminPath}`);
+    log.error(`❌ React app not found at: ${buildPath}`);
     res.status(404).send('Admin panel not found');
   }
 });
