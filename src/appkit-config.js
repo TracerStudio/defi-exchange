@@ -180,7 +180,28 @@ createAppKit({
     enableMobileKeyboard: true,
     enableMobileScroll: true,
     enableMobileZoom: false,
-    enableMobilePinch: false
+    enableMobilePinch: false,
+    enableMobileOptimizations: true,
+    enableMobilePerformance: true,
+    enableMobileReducedMotion: true
+  },
+  
+  // Додаткові мобільні оптимізації
+  mobileOptimizations: {
+    enableMobileWalletConnect: true,
+    enableMobileQRCode: true,
+    enableMobileDeepLinking: true,
+    enableMobileModal: true,
+    enableMobileTouch: true,
+    enableMobileGestures: true,
+    enableMobileKeyboard: true,
+    enableMobileScroll: true,
+    enableMobileZoom: false,
+    enableMobilePinch: false,
+    enableMobilePerformance: true,
+    enableMobileReducedMotion: true,
+    enableMobileCompactMode: true,
+    enableMobileMinimalUI: true
   },
   
   // ДОДАТКОВІ НАЛАШТУВАННЯ ШРИФТІВ
